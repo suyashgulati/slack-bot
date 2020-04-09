@@ -3,6 +3,7 @@ import { SlackEventMiddlewareArgs } from "@slack/bolt/dist/types";
 import Services from "./services";
 import SlackFactory from "./slack-app";
 import wfhview from "./block-kits/wfh";
+
 @Service()
 export default class Controller {
     constructor(private services: Services,

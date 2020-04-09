@@ -9,6 +9,6 @@ export default class Route {
     ) { }
     register(app: App) {
         app.event('app_home_opened', this.ctrl.home);
-        app.command('/wfh', async ({ack, })=>{});
+        app.command('/wfh', this.ctrl.wfh);
     }
 }
