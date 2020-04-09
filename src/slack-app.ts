@@ -29,4 +29,17 @@ export default class SlackFactory {
     this.route.register(this.app);
     return this.app;
   }
+
+  async openModal(botToken, triggerId, block, callbackId) {
+    try {
+      const result = await this.app.client.views.open({
+        token: botToken,
+        trigger_id: triggerId,
+        view: block,
+        callback_id: callbackId,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
