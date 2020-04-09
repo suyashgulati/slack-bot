@@ -6,6 +6,7 @@ import updateHomeView from './block-kits/home';
 export default class Services {
     constructor() { }
     displayHome(user: string): Promise<any> {
+        console.log(user);
         const args = {
           token: process.env.SLACK_BOT_TOKEN,
           user_id: user,
