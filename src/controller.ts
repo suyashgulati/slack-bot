@@ -11,8 +11,10 @@ export default class Controller {
         console.log("Controller -> constructor -> this.services.displayHome", this.services.displayHome)
         this.services.displayHome(data.payload.user)
     }
-    async wfh({ ack, payload, context }) {
+    async wfh({ ack, payload, context, say }) {
+        console.log(payload);
         await ack();
-        await this.slackFactory.openModal(context.botToken, payload.trigger_id, wfhview(), 'wfh');
+        await say('Helllloooo');
+        // await this.slackFactory.openModal(context.botToken, payload.trigger_id, wfhview(), 'wfh');
     }
 }
