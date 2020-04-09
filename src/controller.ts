@@ -6,7 +6,7 @@ import Services from "./services";
 export default class Controller {
     constructor(private services: Services) { }
     async home<T extends string>(data: SlackEventMiddlewareArgs<T>) {
-       console.log(data);
-       this.services.displayHome(data.payload.user)
+        console.log("Controller -> constructor -> this.services.displayHome", this.services.displayHome)
+        this.services.displayHome(data.payload.user)
     }
 }
