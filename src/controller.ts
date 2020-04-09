@@ -8,7 +8,7 @@ import wfhview from "./block-kits/wfh";
 export default class Controller {
     constructor(private services: Services,
         private slackFactory: SlackFactory) { }
-    async home<T extends string>(data: SlackEventMiddlewareArgs<T>) {
+    async home(data) {
         console.log("Controller -> constructor -> this.services.displayHome", this.services.displayHome)
         this.services.displayHome(data.payload.user)
     }

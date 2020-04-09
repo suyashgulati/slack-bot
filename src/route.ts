@@ -9,6 +9,11 @@ export default class Route {
     ) { }
     register(app: App) {
         app.event('app_home_opened', this.ctrl.home);
-        app.command('/wfh', this.ctrl.wfh);
+        app.command('/wfh', async ({ ack, payload, context, say }) => {
+            console.log(payload);
+            await ack();
+            await say('Helllloooo');
+            // await this.slackFactory.openModal(context.botToken, payload.trigger_id, wfhview(), 'wfh');
+        });
     }
 }
