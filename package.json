@@ -1,0 +1,27 @@
+{
+  "name": "slack-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build-ts": "tsc",
+    "start": "npm run serve",
+    "serve": "node build/app.js",
+    "watch-node": "nodemon build/app.js",
+    "watch-ts": "tsc -w"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/bolt": "^2.0.0",
+    "dotenv": "^8.2.0",
+    "reflect-metadata": "^0.1.13",
+    "typedi": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^13.11.1",
+    "nodemon": "^2.0.3",
+    "typescript": "^3.8.3"
+  }
+}
