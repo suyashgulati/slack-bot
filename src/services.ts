@@ -15,6 +15,7 @@ export default class Services {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
         }
+        console.log('https://slack.com/api/views.publish', args, { headers })
         return axios.post('https://slack.com/api/views.publish', args, { headers });
       };
 }
