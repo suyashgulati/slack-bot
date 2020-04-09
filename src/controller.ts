@@ -7,6 +7,6 @@ export default class Controller {
     constructor(private services: Services) { }
     async home<T extends string>(data: SlackEventMiddlewareArgs<T>) {
        console.log(data);
-       data.say('WOooosoosooasdoasodo')
+       this.services.displayHome(data.payload.user)
     }
 }
