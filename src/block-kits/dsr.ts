@@ -1,4 +1,4 @@
-export default () => ({ 
+export default (user) => ({ 
     "callback_id": "dsr-view",
     "type": "modal",
     "title": {
@@ -20,7 +20,7 @@ export default () => ({
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Hey David!\n\n"
+                "text": `Hey <@${user}>!\n\n`
             }
         },
         {

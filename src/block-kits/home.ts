@@ -6,7 +6,7 @@ export default (user: string) => {
           "type": "section",
           "text": {
             "type": "mrkdwn",
-            "text": `*Hi <${user}|@user>!*`
+            "text": `*Hi <@${user}> !*`
           }
         },
         {
@@ -26,8 +26,8 @@ export default (user: string) => {
               "emoji": true
             },
             "style": "primary",
-            "value": "dsr-modal",
-            "action_id": "dsr-modal"
+            "value": "dsr",
+            "action_id": "dsr"
           }
         },
         {

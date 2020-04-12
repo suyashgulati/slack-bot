@@ -1,5 +1,5 @@
 import { Service } from "typedi";
-import { App, ExpressReceiver } from "@slack/bolt";
+import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
 import Route from "./route";
 
 @Service()
@@ -24,22 +24,9 @@ export default class SlackFactory {
     this.app = new App({
       token: process.env.SLACK_BOT_TOKEN,
       receiver: expressReceiver,
-      // logLevel: LogLevel.DEBUG,
+      logLevel: LogLevel.DEBUG,
     });
     this.route.register(this.app);
     return this.app;
-  }
-
-  async openModal(botToken, triggerId, block, callbackId) {
-    try {
-      const result = await this.app.client.views.open({
-        token: botToken,
-        trigger_id: triggerId,
-        view: block,
-        callback_id: callbackId,
-      });
-    } catch (error) {
-      console.error(error);
-    }
   }
 }
