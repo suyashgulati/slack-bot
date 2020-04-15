@@ -2,9 +2,10 @@ import { config } from 'dotenv';
 import "reflect-metadata";
 import Container from 'typedi';
 import SlackFactory from './slack-app';
-
+import init from './db';
 // env
 config();
+init();
 
 let slackFactory = Container.get(SlackFactory);
 let slackApp = slackFactory.create();

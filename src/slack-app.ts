@@ -28,7 +28,7 @@ export default class SlackFactory {
     });
 
     this.app.use(async (data) => {
-      console.log(data.payload);
+      // console.log(data.payload);
       // console.log(data.payload?.['selected_options']);
       data.next();
     });
