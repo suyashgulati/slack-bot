@@ -26,6 +26,13 @@ export default class SlackFactory {
       receiver: expressReceiver,
       logLevel: LogLevel.DEBUG,
     });
+
+    this.app.use(async (data) => {
+      console.log(data.payload);
+      // console.log(data.payload?.['selected_options']);
+      data.next();
+    });
+    
     this.route.register(this.app);
     return this.app;
   }

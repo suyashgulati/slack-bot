@@ -2,7 +2,9 @@ import { Service } from "typedi";
 import Controller from "./controller";
 import { App } from "@slack/bolt";
 import Methods from "./methods";
-import dsrView from "./block-kits/dsr";
+import dsr from "./block-kits/dsr";
+import wfh from "./block-kits/wfh";
+import settings from "./block-kits/settings";
 
 @Service()
 export default class Route {
@@ -11,12 +13,24 @@ export default class Route {
         private ctrl: Controller,
         private methods: Methods,
     ) { }
-    
+
     register(app: App) {
         app.event('app_home_opened', this.ctrl.home);
+        app.action('settings', async ({ body, ack, context }) => {
+            await ack();
+            await this.methods.openModal(app, context.botToken, body['trigger_id'], settings(), 'dsr')
+        });
         app.action('dsr', async ({ body, ack, context }) => {
             await ack();
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], dsrView(body.user.id), 'dsr')
+            await this.methods.openModal(app, context.botToken, body['trigger_id'], dsr(body.user.id), 'dsr')
+        });
+        app.action('wfh', async ({ body, ack, context }) => {
+            await ack();
+            await this.methods.openModal(app, context.botToken, body['trigger_id'], wfh(body.user.id), 'dsr')
+        });
+        app.action('cc_multi_select', async ({ ack, payload }) => {
+            await ack();
+            console.log(payload);
         });
     }
 }

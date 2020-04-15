@@ -1,5 +1,5 @@
-export default (user) => ({ 
-    "callback_id": "dsr-view",
+export default (user) => ({
+    "callback_id": "dsr-modal",
     "type": "modal",
     "title": {
         "type": "plain_text",
@@ -17,51 +17,51 @@ export default (user) => ({
         "emoji": true
     },
     "blocks": [{
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": `Hey <@${user}>!\n\n`
-            }
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "input",
-            "label": {
-                "type": "plain_text",
-                "text": "What did you do today?",
-                "emoji": true
-            },
-            "element": {
-                "type": "plain_text_input",
-                "multiline": true
-            }
-        },
-        {
-            "type": "input",
-            "label": {
-                "type": "plain_text",
-                "text": "What problems are you encountering?",
-                "emoji": true
-            },
-            "element": {
-                "type": "plain_text_input",
-                "multiline": true
-            },
-            "optional": true
-        },
-        {
-            "type": "input",
-            "element": {
-                "type": "plain_text_input",
-                "multiline": true
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "What are you planning to do tomorrow?",
-                "emoji": true
-            }
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": `Hey <@${user}>!\n\n`
         }
+    },
+    {
+        "type": "divider"
+    },
+    {
+        "type": "input",
+        "label": {
+            "type": "plain_text",
+            "text": "What did you do today?",
+            "emoji": true
+        },
+        "element": {
+            "type": "plain_text_input",
+            "multiline": true
+        }
+    },
+    {
+        "type": "input",
+        "label": {
+            "type": "plain_text",
+            "text": "What problems are you encountering?",
+            "emoji": true
+        },
+        "element": {
+            "type": "plain_text_input",
+            "multiline": true
+        },
+        "optional": true
+    },
+    {
+        "type": "input",
+        "element": {
+            "type": "plain_text_input",
+            "multiline": true
+        },
+        "label": {
+            "type": "plain_text",
+            "text": "What are you planning to do tomorrow?",
+            "emoji": true
+        }
+    }
     ]
 })
