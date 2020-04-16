@@ -15,6 +15,7 @@ export default class Methods {
       });
     } catch (error) {
       console.error(error);
+      console.error(error.data);
     }
   }
 }

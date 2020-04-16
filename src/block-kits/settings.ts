@@ -1,22 +1,24 @@
-export default () => ({
+import { times, floor, padStart, find } from 'lodash';
+import User from '../db/entity/user';
+
+// 48 for every half hour
+const TIME_OPTIONS = times(48, (idx) => ({
+	"text": {
+		"type": "plain_text",
+		"text": padStart(`${floor(idx / 2)}`, 2, '0') + `:` + padStart(`${(idx % 2) * 30}`, 2, '0') + ` Hrs`,
+		"emoji": true
+	},
+	"value": `${idx / 2}`
+}));
+export default (wfhTime: string, dsrTime: string, toUserId: User, ccUserIds: User[]) => ({
 	"type": "modal",
 	"title": {
 		"type": "plain_text",
 		"text": "Settings",
 		"emoji": true
 	},
-	"submit": {
-		"type": "plain_text",
-		"text": "Submit",
-		"emoji": true
-	},
-	"close": {
-		"type": "plain_text",
-		"text": "Cancel",
-		"emoji": true
-	},
 	"blocks": [
-        {
+		{
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
@@ -29,43 +31,11 @@ export default () => ({
 					"text": "Select an item",
 					"emoji": true
 				},
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 1",
-							"emoji": true
-						},
-						"value": "value-0"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 2",
-							"emoji": true
-						},
-						"value": "value-1"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 3",
-							"emoji": true
-						},
-						"value": "value-2"
-					}
-				],
-				"initial_option": {
-					"text": {
-						"type": "plain_text",
-						"text": "Choice 2",
-						"emoji": true
-					},
-					"value": "value-1"
-				}
+				"options": TIME_OPTIONS,
+				"initial_option": find(TIME_OPTIONS, to => to.value === wfhTime)
 			}
 		},
-        {
+		{
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
@@ -78,40 +48,8 @@ export default () => ({
 					"text": "Select an item",
 					"emoji": true
 				},
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 1",
-							"emoji": true
-						},
-						"value": "value-0"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 2",
-							"emoji": true
-						},
-						"value": "value-1"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 3",
-							"emoji": true
-						},
-						"value": "value-2"
-					}
-				],
-				"initial_option": {
-					"text": {
-						"type": "plain_text",
-						"text": "Choice 2",
-						"emoji": true
-					},
-					"value": "value-1"
-				}
+				"options": TIME_OPTIONS,
+				"initial_option": find(TIME_OPTIONS, to => to.value === dsrTime)
 			}
 		},
 		{
@@ -216,4 +154,4 @@ export default () => ({
 			}
 		}
 	]
-})
+});

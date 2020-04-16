@@ -19,11 +19,4 @@ export default class Controller {
     }
     axios.post('https://slack.com/api/views.publish', args, { headers });
   }
-
-  async wfh({ ack, payload, context, say }) {
-    console.log(payload);
-    await ack();
-    await say('Helllloooo');
-    // await this.slackFactory.openModal(context.botToken, payload.trigger_id, wfhview(), 'wfh');
-  }
 }
