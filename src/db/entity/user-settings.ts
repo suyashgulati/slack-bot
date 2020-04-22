@@ -1,23 +1,34 @@
-import { Entity, Column, ManyToOne, ManyToMany, JoinTable } from "typeorm";
+import { Entity, Column, ManyToOne, ManyToMany, JoinTable, JoinColumn, OneToOne } from "typeorm";
 import CommonEntity from "../common-entity";
 import User from "./user";
+import { Time } from "../../shared/enums/time";
 
 @Entity()
 export default class UserSettings extends CommonEntity {
 
-    @ManyToOne(type => User)
+    @OneToOne(type => User)
+    @JoinColumn()
     user: User;
 
-    @Column()
-    wfhTime: string;
+    @Column({
+        type: "enum",
+        enum: Time,
+        nullable: true,
+    })
+    wfhTime: Time;
 
-    @Column()
-    dsrTime: string;
+    @Column({
+        type: "enum",
+        enum: Time,
+        nullable: true,
+    })
+    dsrTime: Time;
 
-    @ManyToOne(type => User)
+    @ManyToOne(type => User, { nullable: true })
+    @JoinColumn()
     toUser: User;
-    
-    @ManyToMany(type => User)
+
+    @ManyToMany(type => User, { nullable: true })
     @JoinTable()
     ccUsers: User[];
 

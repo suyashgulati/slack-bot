@@ -8,22 +8,31 @@ import settings from "./block-kits/settings";
 import UserSettings from "./db/entity/user-settings";
 import { InjectRepository } from "typeorm-typedi-extensions";
 import { Repository } from "typeorm";
-
+import { UserRepository } from "./db/repository/user-repository";
+import _ from "lodash";
+// import userOptionBuilder from "./block-kits/builders/user-option-builder";
+import WfhEntry from "./db/entity/wfh-entry";
+import User from "./db/entity/user";
+import DsrEntry from "./db/entity/dsr-entry";
 @Service()
 export default class Route {
-
+    // TODO: Shift magic values to one place
     constructor(
-        private ctrl: Controller,
         private methods: Methods,
-        @InjectRepository(UserSettings) private userSettingsRepo: Repository<UserSettings>
+        @InjectRepository(UserSettings) private userSettingsRepo: Repository<UserSettings>,
+        @InjectRepository(WfhEntry) private wfhRepo: Repository<WfhEntry>,
+        @InjectRepository(DsrEntry) private dsrRepo: Repository<DsrEntry>,
+        @InjectRepository() private readonly userRepo: UserRepository,
     ) { }
 
     register(app: App) {
-        app.event('app_home_opened', this.ctrl.home);
+        app.event('app_home_opened', async ({ body, context }) => {
+            const todayWfh = await this.wfhRepo.findOne({ where: { user: { id: body.event.user } }, order: { createdAt: "DESC" } });
+            await this.methods.publishHome(app, context.botToken, body.event.user, todayWfh.tasks);
+        });
         app.action('settings', async ({ body, ack, context }) => {
             await ack();
-            let userSett = await this.userSettingsRepo.findOne();
-            console.log("Route -> register -> userSett", userSett)
+            let userSett = await this.userSettingsRepo.findOne({ where: { user: { id: body.user.id } } });
             let b = settings(userSett.wfhTime, userSett.dsrTime, userSett.toUser, userSett.ccUsers);
             await this.methods.openModal(app, context.botToken, body['trigger_id'], b, 'settings')
         });
@@ -35,55 +44,49 @@ export default class Route {
             await ack();
             await this.methods.openModal(app, context.botToken, body['trigger_id'], wfh(body.user.id), 'wfh')
         });
-        app.action('cc_multi_select', async ({ ack, payload }) => {
+        app.action('user_to', async ({ ack, body, action }) => {
+            // TODO: Shift magic values to one place
+            const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
+            userSett.toUser = new User(action['selected_user']);
+            this.userSettingsRepo.save(userSett);
             await ack();
-            console.log(payload);
+        });
+        app.action('user_cc', async ({ ack, body, action }) => {
+            // TODO: Shift magic values to one place
+            const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
+            userSett.ccUsers = _.map(action['selected_users'], userId => new User(userId));
+            this.userSettingsRepo.save(userSett);
+            await ack();
+        });
+        app.view('wfh_modal', async ({ ack, body }) => {
+            const input = body.view.state.values.wfh_block.wfh_input.value;
+            // TODO: Shift magic values to one place
+            const entry = new WfhEntry();
+            entry.tasks = this.methods.splitInputToTasks(input);
+            entry.user = new User(body.user.id);
+            this.wfhRepo.save(entry);
+            await ack();
+        });
+        app.view('dsr_modal', async ({ ack, body }) => {
+            const input = body.view.state.values;
+            const entry = new DsrEntry();
+            entry.today = this.methods.splitInputToTasks(input.dsr_1_block.dsr_1_input.value);
+            entry.challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
+            entry.tomorrow = this.methods.splitInputToTasks(input.dsr_3_block.dsr_3_input.value);
+            entry.user = new User(body.user.id);
+            this.dsrRepo.save(entry);
+            await ack();
         });
     }
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // app.message('hello', async ({ message, say }) => {
-        //     // say() sends a message to the channel where the event was triggered
-        //     await say({
-        //         blocks: [
-        //             {
-        //                 "type": "section",
-        //                 "text": {
-        //                     "type": "mrkdwn",
-        //                     "text": `Hey there <@${message.user}>!`
-        //                 },
-        //                 "accessory": {
-        //                     "type": "button",
-        //                     "text": {
-        //                         "type": "plain_text",
-        //                         "text": "Click Me"
-        //                     },
-        //                     "action_id": "button_click"
-        //                 }
-        //             }
-        //         ]
-        //     } as any);
-        // });
-
-        // app.action('button_click', async ({ body, ack, say }) => {
-        //     // Acknowledge the action
-        //     await ack();
-        //     await say(`<@${body.user.id}> clicked the button`);
-        // });
+// app.options({ 'action_id': /^all_user.*/ }, async ({ context, ack, body }) => {
+//     console.log("Route -> register -> context", context)
+//     console.log("Route -> register -> body", body)
+//     let allUsers = await this.userRepo.findAll();
+//     const options = _.chain(allUsers)
+//         .filter(user => user.name.toLowerCase().includes(body.value.toLowerCase()))
+//         .map(userOptionBuilder);
+//     await ack({ options: options as any });
+// });

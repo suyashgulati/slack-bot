@@ -17,9 +17,11 @@
   "dependencies": {
     "@slack/bolt": "^2.0.0",
     "axios": "^0.19.2",
+    "csvtojson": "^2.0.10",
     "dotenv": "^8.2.0",
     "faker": "^4.1.0",
     "lodash": "^4.17.15",
+    "node-cache": "^5.1.0",
     "pg": "^8.0.2",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.8.0",
@@ -27,6 +29,7 @@
     "typeorm-typedi-extensions": "^0.2.3"
   },
   "devDependencies": {
+    "@slack/types": "^1.5.0",
     "@types/faker": "^4.1.11",
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.11.1",
@@ -35,5 +38,10 @@
   },
   "engines": {
     "node": "12.x"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "logs/*"
+    ]
   }
 }

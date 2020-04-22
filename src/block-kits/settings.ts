@@ -1,16 +1,9 @@
-import { times, floor, padStart, find } from 'lodash';
+import { find } from 'lodash';
 import User from '../db/entity/user';
+import { Time } from '../shared/enums/time';
+import { TIME_OPTIONS } from '../shared/constants/time-options';
 
-// 48 for every half hour
-const TIME_OPTIONS = times(48, (idx) => ({
-	"text": {
-		"type": "plain_text",
-		"text": padStart(`${floor(idx / 2)}`, 2, '0') + `:` + padStart(`${(idx % 2) * 30}`, 2, '0') + ` Hrs`,
-		"emoji": true
-	},
-	"value": `${idx / 2}`
-}));
-export default (wfhTime: string, dsrTime: string, toUserId: User, ccUserIds: User[]) => ({
+export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[]) => ({
 	"type": "modal",
 	"title": {
 		"type": "plain_text",
@@ -32,7 +25,7 @@ export default (wfhTime: string, dsrTime: string, toUserId: User, ccUserIds: Use
 					"emoji": true
 				},
 				"options": TIME_OPTIONS,
-				"initial_option": find(TIME_OPTIONS, to => to.value === wfhTime)
+				"initial_option": find(TIME_OPTIONS, to => to.value === wfhTime.toString())
 			}
 		},
 		{
@@ -59,46 +52,13 @@ export default (wfhTime: string, dsrTime: string, toUserId: User, ccUserIds: Use
 				"text": "Pick an item from the dropdown list"
 			},
 			"accessory": {
-				"type": "static_select",
+				"type": "users_select",
+				"action_id": "user_to",
 				"placeholder": {
 					"type": "plain_text",
 					"text": "Select an item",
 					"emoji": true
 				},
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 1",
-							"emoji": true
-						},
-						"value": "value-0"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 2",
-							"emoji": true
-						},
-						"value": "value-1"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 3",
-							"emoji": true
-						},
-						"value": "value-2"
-					}
-				],
-				"initial_option": {
-					"text": {
-						"type": "plain_text",
-						"text": "Choice 2",
-						"emoji": true
-					},
-					"value": "value-1"
-				}
 			}
 		},
 		{
@@ -108,50 +68,23 @@ export default (wfhTime: string, dsrTime: string, toUserId: User, ccUserIds: Use
 				"text": "Pick one or more people you would like to add in cc!"
 			},
 			"accessory": {
-				"type": "multi_static_select",
+				"type": "multi_users_select",
+				"action_id": "user_cc",
 				"placeholder": {
 					"type": "plain_text",
 					"text": "Select :e-mail:",
 					"emoji": true
 				},
-				"action_id": "cc_multi_select",
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 1",
-							"emoji": true
-						},
-						"value": "value-0"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 2",
-							"emoji": true
-						},
-						"value": "value-1"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 3",
-							"emoji": true
-						},
-						"value": "value-2"
-					}
-				],
-				"initial_options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Choice 3",
-							"emoji": true
-						},
-						"value": "value-2"
-					}
-				]
 			}
 		}
 	]
+});
+
+const userOptionFactory = (user: User) => ({
+	"text": {
+		"type": "plain_text",
+		"text": user.name,
+		"emoji": false
+	},
+	"value": user.id
 });

@@ -1,4 +1,11 @@
-export default (user: string) => {
+import { map, chain } from 'lodash';
+import todoItemBuilder from './builders/todo-item-builder';
+import Task from '../shared/interfaces/task';
+
+export default (user: string, tasks: Task[]) => {
+  const allOptions = map(tasks, todoItemBuilder);
+  const completedOptions = chain(tasks).filter({ isComplete: true }).map(todoItemBuilder).value();
+  const elementProps = { 'options': allOptions, 'initial_options': completedOptions };
   let view = {
     "type": "home",
     "blocks": [
@@ -56,69 +63,10 @@ export default (user: string) => {
         "elements": [
           {
             "type": "checkboxes",
-            "initial_options": [
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "~*Get into the garden :house_with_garden:*~"
-                },
-                "value": "option 1"
-              }
-            ],
-            "options": [
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "~*Get into the garden :house_with_garden:*~"
-                },
-                "value": "option 1"
-              },
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Get the groundskeeper wet :sweat_drops:*"
-                },
-                "value": "option 2"
-              },
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Steal the groundskeeper's keys :old_key:*"
-                },
-                "value": "option 3"
-              },
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Make the groundskeeper wear his sun hat :male-farmer:*"
-                },
-                "value": "option 4"
-              },
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Rake in the lake :ocean:*"
-                },
-                "value": "option 5"
-              },
-              {
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Have a picnic :knife_fork_plate:*"
-                },
-                "value": "option 6",
-                "description": {
-                  "type": "mrkdwn",
-                  "text": "Bring to the picnic: sandwich, apple, pumpkin, carrot, basket"
-                }
-              }
-            ]
+            "action_id": "home_todo",
+            "options": allOptions,
+            ...(completedOptions.length && { "initial_options": completedOptions })
           },
-        ]
-      },
-      {
-        "type": "actions",
-        "elements": [
           {
             "type": "button",
             "text": {
@@ -134,9 +82,10 @@ export default (user: string) => {
             }
           }
         ]
-      }
+      },
     ]
   };
-
-  return JSON.stringify(view);
+  // console.log(JSON.stringify(view));
+  // return JSON.stringify(view);
+  return view;
 };

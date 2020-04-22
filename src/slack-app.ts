@@ -1,11 +1,13 @@
 import { Service } from "typedi";
 import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
 import Route from "./route";
+import Logger from "./shared/logger";
 
 @Service()
 export default class SlackFactory {
   constructor(
     private route: Route,
+    private logger: Logger,
   ) { }
   app: App;
   expressApp;
@@ -27,12 +29,11 @@ export default class SlackFactory {
       logLevel: LogLevel.DEBUG,
     });
 
-    this.app.use(async (data) => {
-      // console.log(data.payload);
-      // console.log(data.payload?.['selected_options']);
-      data.next();
+    this.app.use(async args => {
+      this.logger.log(args);
+      args.next();
     });
-    
+
     this.route.register(this.app);
     return this.app;
   }
