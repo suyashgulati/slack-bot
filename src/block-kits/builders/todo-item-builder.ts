@@ -1,9 +1,10 @@
 import Task from "../../shared/interfaces/task";
+import UserTodo from "../../db/entity/user-todo";
 
-export default (task: Task, index: number) => ({
+export default (todo: UserTodo, index: number) => ({
   "text": {
     "type": "mrkdwn",
-    "text": task.text,
+    "text": todo.text,
   },
-  "value": `${index}`,
+  "value": `${todo.id}`,
 });

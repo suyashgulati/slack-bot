@@ -8,6 +8,7 @@ export default class WfhEntry extends CommonEntity {
     @ManyToOne(type => User)
     user: User;
 
-    @Column('jsonb')
-    tasks: Task[];
+    @Column('text', { array: true })
+    tasks: string[];
 }
+

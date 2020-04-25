@@ -1,12 +1,11 @@
 import { map, chain } from 'lodash';
 import todoItemBuilder from './builders/todo-item-builder';
-import Task from '../shared/interfaces/task';
+import UserTodo from '../db/entity/user-todo';
 
-export default (user: string, tasks: Task[]) => {
-  const allOptions = map(tasks, todoItemBuilder);
-  const completedOptions = chain(tasks).filter({ isComplete: true }).map(todoItemBuilder).value();
-  const elementProps = { 'options': allOptions, 'initial_options': completedOptions };
-  let view = {
+export default (user: string, todos: UserTodo[]) => {
+  const allOptions = map(todos, todoItemBuilder);
+  const completedOptions = chain(todos).filter({ isComplete: true }).map(todoItemBuilder).value();
+  const view = {
     "type": "home",
     "blocks": [
       {
@@ -51,38 +50,42 @@ export default (user: string, tasks: Task[]) => {
           }
         ]
       },
-      {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": "*Today*"
-        }
-      },
-      {
-        "type": "actions",
-        "elements": [
+      //* Adding blocks only if todo list exists
+      ...(allOptions.length ?
+        [
           {
-            "type": "checkboxes",
-            "action_id": "home_todo",
-            "options": allOptions,
-            ...(completedOptions.length && { "initial_options": completedOptions })
-          },
-          {
-            "type": "button",
+            "type": "section",
             "text": {
-              "type": "plain_text",
-              "text": "Add Item"
+              "type": "mrkdwn",
+              "text": "*Today*"
             }
           },
           {
-            "type": "button",
-            "text": {
-              "type": "plain_text",
-              "text": "Generate DSR from To-Do list"
-            }
-          }
-        ]
-      },
+            "type": "actions",
+            "elements": [
+              {
+                "type": "checkboxes",
+                "action_id": "home_todo",
+                "options": allOptions,
+                ...(completedOptions.length && { "initial_options": completedOptions })
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "Add Item"
+                }
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "Generate DSR from To-Do list"
+                }
+              }
+            ]
+          }] : []
+      )
     ]
   };
   // console.log(JSON.stringify(view));

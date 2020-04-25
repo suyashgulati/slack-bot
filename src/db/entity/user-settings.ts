@@ -15,21 +15,21 @@ export default class UserSettings extends CommonEntity {
         enum: Time,
         nullable: true,
     })
-    wfhTime: Time;
+    wfhTime?: Time;
 
     @Column({
         type: "enum",
         enum: Time,
         nullable: true,
     })
-    dsrTime: Time;
+    dsrTime?: Time;
 
     @ManyToOne(type => User, { nullable: true })
     @JoinColumn()
-    toUser: User;
+    toUser?: User;
 
     @ManyToMany(type => User, { nullable: true })
     @JoinTable()
-    ccUsers: User[];
+    ccUsers?: User[];
 
 }

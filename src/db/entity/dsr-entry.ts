@@ -8,12 +8,12 @@ export default class DsrEntry extends CommonEntity {
     @ManyToOne(type => User)
     user: User;
 
-    @Column("text", { array: true })
-    today: Task[];
+    @Column('text', { array: true })
+    today: string[];
 
-    @Column("text", { array: true })
+    @Column('text', { array: true })
     challenges: string[];
 
-    @Column("text", { array: true })
-    tomorrow: Task[];
+    @Column('text', { array: true })
+    tomorrow: string[];
 }

@@ -1,5 +1,4 @@
 import { Service } from "typedi";
-import Controller from "./controller";
 import { App } from "@slack/bolt";
 import Methods from "./methods";
 import dsr from "./block-kits/dsr";
@@ -14,6 +13,7 @@ import _ from "lodash";
 import WfhEntry from "./db/entity/wfh-entry";
 import User from "./db/entity/user";
 import DsrEntry from "./db/entity/dsr-entry";
+import UserTodo from "./db/entity/user-todo";
 @Service()
 export default class Route {
     // TODO: Shift magic values to one place
@@ -22,13 +22,14 @@ export default class Route {
         @InjectRepository(UserSettings) private userSettingsRepo: Repository<UserSettings>,
         @InjectRepository(WfhEntry) private wfhRepo: Repository<WfhEntry>,
         @InjectRepository(DsrEntry) private dsrRepo: Repository<DsrEntry>,
+        @InjectRepository(UserTodo) private todoRepo: Repository<UserTodo>,
         @InjectRepository() private readonly userRepo: UserRepository,
     ) { }
 
     register(app: App) {
         app.event('app_home_opened', async ({ body, context }) => {
-            const todayWfh = await this.wfhRepo.findOne({ where: { user: { id: body.event.user } }, order: { createdAt: "DESC" } });
-            await this.methods.publishHome(app, context.botToken, body.event.user, todayWfh.tasks);
+            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { createdAt: "ASC" }, take: 10 });
+            await this.methods.publishHome(app, context.botToken, body.event.user, todos);
         });
         app.action('settings', async ({ body, ack, context }) => {
             await ack();
@@ -58,21 +59,32 @@ export default class Route {
             this.userSettingsRepo.save(userSett);
             await ack();
         });
+        app.action('home_todo', async ({ ack, body, action, client, context }) => {
+            // const currentTodos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { createdAt: "ASC" }, take: 10 });
+            // _.map(action['selected_options'], )
+            // _.map(todayWfh.tasks, task => ({ ...task}))
+            // this.methods.updateHome(app, context.botToken, body.user.id, body['view'].id, todayWfh.tasks);
+            await ack();
+        });
         app.view('wfh_modal', async ({ ack, body }) => {
             const input = body.view.state.values.wfh_block.wfh_input.value;
+            const tasks = this.methods.splitInputToArray(input);
+            const user = new User(body.user.id);
             // TODO: Shift magic values to one place
             const entry = new WfhEntry();
-            entry.tasks = this.methods.splitInputToTasks(input);
-            entry.user = new User(body.user.id);
+            entry.tasks = tasks;
+            entry.user = user;
             this.wfhRepo.save(entry);
+            const todos = _.map(tasks, task => new UserTodo(user, task));
+            this.todoRepo.save(todos);
             await ack();
         });
         app.view('dsr_modal', async ({ ack, body }) => {
             const input = body.view.state.values;
             const entry = new DsrEntry();
-            entry.today = this.methods.splitInputToTasks(input.dsr_1_block.dsr_1_input.value);
+            entry.today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
             entry.challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
-            entry.tomorrow = this.methods.splitInputToTasks(input.dsr_3_block.dsr_3_input.value);
+            entry.tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
             entry.user = new User(body.user.id);
             this.dsrRepo.save(entry);
             await ack();
