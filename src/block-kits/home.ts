@@ -7,6 +7,7 @@ export default (user: string, todos: UserTodo[]) => {
   const completedOptions = chain(todos).filter({ isComplete: true }).map(todoItemBuilder).value();
   const view = {
     "type": "home",
+    "external_id": "app_home_view",
     "blocks": [
       {
         "type": "section",
@@ -71,18 +72,12 @@ export default (user: string, todos: UserTodo[]) => {
               },
               {
                 "type": "button",
+                "action_id": "add_task",
                 "text": {
                   "type": "plain_text",
-                  "text": "Add Item"
+                  "text": "Add Task"
                 }
               },
-              {
-                "type": "button",
-                "text": {
-                  "type": "plain_text",
-                  "text": "Generate DSR from To-Do list"
-                }
-              }
             ]
           }] : []
       )

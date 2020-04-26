@@ -1,4 +1,7 @@
-export default (user) => ({
+import UserTodo from "../db/entity/user-todo";
+import { map } from "lodash";
+
+export default (user: string, todos: UserTodo[]) => ({
     "callback_id": "dsr_modal",
     "type": "modal",
     "title": {
@@ -41,7 +44,10 @@ export default (user) => ({
             "placeholder": {
                 "type": "plain_text",
                 "text": "Enter your tasks separated by new lines like:\nTask 1\nTask 2\nTask 3..."
-            }
+            },
+            ...(todos.length && {
+                "initial_value": map(todos, t => `${t.text}${t.isComplete ? ' - Done' : ''}`).join("\n")
+            })
         }
     },
     {

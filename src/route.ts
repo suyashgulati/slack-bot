@@ -14,6 +14,7 @@ import WfhEntry from "./db/entity/wfh-entry";
 import User from "./db/entity/user";
 import DsrEntry from "./db/entity/dsr-entry";
 import UserTodo from "./db/entity/user-todo";
+import addItemModal from "./block-kits/add-task-modal";
 @Service()
 export default class Route {
     // TODO: Shift magic values to one place
@@ -28,7 +29,7 @@ export default class Route {
 
     register(app: App) {
         app.event('app_home_opened', async ({ body, context }) => {
-            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { createdAt: "ASC" }, take: 10 });
+            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { id: "ASC" }, take: 10 });
             await this.methods.publishHome(app, context.botToken, body.event.user, todos);
         });
         app.action('settings', async ({ body, ack, context }) => {
@@ -39,7 +40,8 @@ export default class Route {
         });
         app.action('dsr', async ({ body, ack, context }) => {
             await ack();
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], dsr(body.user.id), 'dsr')
+            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.user.id }, isActive: true }, order: { id: "ASC" }, take: 10 });
+            await this.methods.openModal(app, context.botToken, body['trigger_id'], dsr(body.user.id, todos), 'dsr')
         });
         app.action('wfh', async ({ body, ack, context }) => {
             await ack();
@@ -60,13 +62,21 @@ export default class Route {
             await ack();
         });
         app.action('home_todo', async ({ ack, body, action, client, context }) => {
-            // const currentTodos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { createdAt: "ASC" }, take: 10 });
-            // _.map(action['selected_options'], )
-            // _.map(todayWfh.tasks, task => ({ ...task}))
-            // this.methods.updateHome(app, context.botToken, body.user.id, body['view'].id, todayWfh.tasks);
             await ack();
+            // TODO: Shift magic values to one place
+            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.user.id }, isActive: true }, order: { id: "ASC" }, take: 10 });
+            _.forEach(todos, todo => {
+                const selected = _.some(action['selected_options'], op => todo.id === +op.value);
+                todo.isComplete = selected;
+            });
+            this.todoRepo.save(todos);
+            this.updateHome(app, context.botToken, body.user.id, todos);
         });
-        app.view('wfh_modal', async ({ ack, body }) => {
+        app.action('add_task', async ({ ack, body, action, client, context }) => {
+            await ack();
+            await this.methods.openModal(app, context.botToken, body['trigger_id'], addItemModal(), 'add_task')
+        });
+        app.view('wfh_modal', async ({ ack, body, context }) => {
             const input = body.view.state.values.wfh_block.wfh_input.value;
             const tasks = this.methods.splitInputToArray(input);
             const user = new User(body.user.id);
@@ -76,10 +86,11 @@ export default class Route {
             entry.user = user;
             this.wfhRepo.save(entry);
             const todos = _.map(tasks, task => new UserTodo(user, task));
-            this.todoRepo.save(todos);
+            await this.todoRepo.save(todos);
+            this.updateHome(app, context.botToken, body.user.id);
             await ack();
         });
-        app.view('dsr_modal', async ({ ack, body }) => {
+        app.view('dsr_modal', async ({ ack, body, context }) => {
             const input = body.view.state.values;
             const entry = new DsrEntry();
             entry.today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
@@ -87,8 +98,25 @@ export default class Route {
             entry.tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
             entry.user = new User(body.user.id);
             this.dsrRepo.save(entry);
+            await this.todoRepo.delete({ user: { id: body.user.id } });
+            this.updateHome(app, context.botToken, body.user.id);
             await ack();
         });
+        app.view('add_task_modal', async ({ ack, body, context }) => {
+            const input = body.view.state.values.add_task_block.add_task_input.value;
+            const newTodo = new UserTodo(new User(body.user.id), input);
+            await this.todoRepo.save(newTodo);
+            this.updateHome(app, context.botToken, body.user.id);
+            await ack();
+        });
+    }
+
+    // Todo: Move to service.ts
+    async updateHome(app: App, botToken: string, userId: string, todos?: UserTodo[]) {
+        if (!todos) {
+            todos = await this.todoRepo.find({ where: { user: { id: userId }, isActive: true }, order: { id: "ASC" }, take: 10 });
+        }
+        this.methods.updateHome(app, botToken, userId, todos);
     }
 }
 

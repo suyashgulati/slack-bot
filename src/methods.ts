@@ -34,13 +34,14 @@ export default class Methods {
     }
   }
 
-  async updateHome(app: App, botToken: string, userId: string, viewId: string, todos: UserTodo[]) {
+  async updateHome(app: App, botToken: string, userId: string, todos: UserTodo[]) {
     try {
       const result = await app.client.views.update({
         token: botToken,
-        view_id: viewId,
+        // view_id: 'app_home_view',
+        external_id: 'app_home_view',
         view: homeView(userId, todos) as any
-      });
+      } as any);
     } catch (error) {
       console.error(error);
       console.error(error.data);
@@ -48,10 +49,10 @@ export default class Methods {
   }
 
   splitInputToArray(tasks: string): string[] {
-    return tasks.split('\n').map(str => str.trim());
+    return tasks ? tasks.split('\n').map(str => str.trim()) : [];
   }
 
   splitInputToTasks(tasks: string): Task[] {
-    return tasks.split('\n').map(str => ({ text: str.trim(), isComplete: false }));
+    return tasks ? tasks.split('\n').map(str => ({ text: str.trim(), isComplete: false })) : [];
   }
 }
