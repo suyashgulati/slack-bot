@@ -18,6 +18,7 @@ export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[])
 				"text": "Pick a time you want notification for WFH"
 			},
 			"accessory": {
+				"action_id": "wfh_time",
 				"type": "static_select",
 				"placeholder": {
 					"type": "plain_text",
@@ -35,6 +36,7 @@ export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[])
 				"text": "Pick a time you want notification for DSR"
 			},
 			"accessory": {
+				"action_id": "dsr_time",
 				"type": "static_select",
 				"placeholder": {
 					"type": "plain_text",

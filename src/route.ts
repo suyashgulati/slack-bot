@@ -54,6 +54,19 @@ export default class Route {
             this.userSettingsRepo.save(userSett);
             await ack();
         });
+        app.action(/^.*_time/, async ({ ack, body, action }) => {
+            const input = action['selected_option'].value;
+            const actionId = action['action_id'];
+            // TODO: Shift magic values to one place
+            const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
+            if (actionId === 'dsr_time') {
+                userSett.dsrTime = input;
+            } else if (actionId === 'wfh_time') {
+                userSett.wfhTime = input;
+            }
+            this.userSettingsRepo.save(userSett);
+            await ack();
+        });
         app.action('user_cc', async ({ ack, body, action }) => {
             // TODO: Shift magic values to one place
             const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
