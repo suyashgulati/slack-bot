@@ -1,4 +1,4 @@
-export default (user) => ({
+export default (userId) => ({
 	"callback_id": "wfh_modal",
 	"type": "modal",
 	"title": {
@@ -21,7 +21,7 @@ export default (user) => ({
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": `*Hi <@${user}> !*`
+				"text": `*Hi <@${userId}> !*`
 			}
 		},
 		{

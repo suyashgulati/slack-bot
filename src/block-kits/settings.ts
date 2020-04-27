@@ -1,9 +1,9 @@
-import { find } from 'lodash';
+import { find, map } from 'lodash';
 import User from '../db/entity/user';
 import { Time } from '../shared/enums/time';
 import { TIME_OPTIONS } from '../shared/constants/time-options';
 
-export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[]) => ({
+export default (wfhTime: Time, dsrTime: Time, toUser: User, ccUsers: User[]) => ({
 	"type": "modal",
 	"title": {
 		"type": "plain_text",
@@ -61,6 +61,7 @@ export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[])
 					"text": "Select an item",
 					"emoji": true
 				},
+				...(toUser && { "initial_user": toUser.id })
 			}
 		},
 		{
@@ -77,6 +78,7 @@ export default (wfhTime: Time, dsrTime: Time, toUserId: User, ccUserIds: User[])
 					"text": "Select :e-mail:",
 					"emoji": true
 				},
+				...(ccUsers?.length && { "initial_users": map(ccUsers, 'id') })
 			}
 		}
 	]

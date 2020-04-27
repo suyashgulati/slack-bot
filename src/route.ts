@@ -15,6 +15,7 @@ import User from "./db/entity/user";
 import DsrEntry from "./db/entity/dsr-entry";
 import UserTodo from "./db/entity/user-todo";
 import addItemModal from "./block-kits/add-task-modal";
+import dsrMsg from "./block-kits/dsr-msg";
 @Service()
 export default class Route {
     // TODO: Shift magic values to one place
@@ -35,6 +36,7 @@ export default class Route {
         app.action('settings', async ({ body, ack, context }) => {
             await ack();
             let userSett = await this.userSettingsRepo.findOne({ where: { user: { id: body.user.id } } });
+            console.log("Route -> userSett", userSett)
             let b = settings(userSett.wfhTime, userSett.dsrTime, userSett.toUser, userSett.ccUsers);
             await this.methods.openModal(app, context.botToken, body['trigger_id'], b, 'settings')
         });
@@ -51,6 +53,7 @@ export default class Route {
             // TODO: Shift magic values to one place
             const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
             userSett.toUser = new User(action['selected_user']);
+            console.log("userSett", userSett)
             this.userSettingsRepo.save(userSett);
             await ack();
         });
@@ -142,4 +145,10 @@ export default class Route {
 //         .filter(user => user.name.toLowerCase().includes(body.value.toLowerCase()))
 //         .map(userOptionBuilder);
 //     await ack({ options: options as any });
+// });
+
+// app.message('hello', async ({ say, body, message }) => {
+//     await say({
+//         blocks: dsrMsg(message.user)
+//     } as any);
 // });

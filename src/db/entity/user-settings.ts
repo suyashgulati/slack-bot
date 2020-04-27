@@ -6,7 +6,7 @@ import { Time } from "../../shared/enums/time";
 @Entity()
 export default class UserSettings extends CommonEntity {
 
-    @OneToOne(type => User)
+    @OneToOne(type => User, { eager: true })
     @JoinColumn()
     user: User;
 
@@ -24,11 +24,11 @@ export default class UserSettings extends CommonEntity {
     })
     dsrTime?: Time;
 
-    @ManyToOne(type => User, { nullable: true })
+    @ManyToOne(type => User, { nullable: true, eager: true })
     @JoinColumn()
     toUser?: User;
 
-    @ManyToMany(type => User, { nullable: true })
+    @ManyToMany(type => User, { nullable: true, eager: true })
     @JoinTable()
     ccUsers?: User[];
 

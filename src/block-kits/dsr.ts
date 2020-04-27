@@ -1,7 +1,7 @@
 import UserTodo from "../db/entity/user-todo";
 import { map } from "lodash";
 
-export default (user: string, todos: UserTodo[]) => ({
+export default (userId: string, todos: UserTodo[]) => ({
     "callback_id": "dsr_modal",
     "type": "modal",
     "title": {
@@ -23,7 +23,7 @@ export default (user: string, todos: UserTodo[]) => ({
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": `Hey <@${user}>!\n\n`
+            "text": `Hey <@${userId}>!\n\n`
         }
     },
     {

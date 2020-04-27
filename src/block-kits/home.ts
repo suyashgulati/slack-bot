@@ -2,7 +2,7 @@ import { map, chain } from 'lodash';
 import todoItemBuilder from './builders/todo-item-builder';
 import UserTodo from '../db/entity/user-todo';
 
-export default (user: string, todos: UserTodo[]) => {
+export default (userId: string, todos: UserTodo[]) => {
   const allOptions = map(todos, todoItemBuilder);
   const completedOptions = chain(todos).filter({ isComplete: true }).map(todoItemBuilder).value();
   const view = {
@@ -13,7 +13,7 @@ export default (user: string, todos: UserTodo[]) => {
         "type": "section",
         "text": {
           "type": "mrkdwn",
-          "text": `*Hi <@${user}> !*`
+          "text": `*Hi <@${userId}> !*`
         },
         "accessory": {
           "type": "button",
