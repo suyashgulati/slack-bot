@@ -10,7 +10,7 @@ export default (userId: string) => ([
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": "Its time to add today's DSR. Simply click the button below:"
+            "text": "Its time to add today's DSR\nSimply click the button below:"
         }
     },
     {

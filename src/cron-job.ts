@@ -30,7 +30,6 @@ export default class CronJob {
         const minute = now.minute() > 30 ? 5 : 0;
         const nowTime = `${hour}.${minute}`;
         const allUserSettings = await this.userSettingsRepo.find();
-        console.log("CronJob -> halfHourlyTask -> allUserSettings", allUserSettings)
         forEach(allUserSettings, async userSett => {
             let userId = userSett.user.id;
             if (userSett.wfhTime === nowTime) {

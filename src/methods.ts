@@ -55,4 +55,10 @@ export default class Methods {
   splitInputToTasks(tasks: string): Task[] {
     return tasks ? tasks.split('\n').map(str => ({ text: str.trim(), isComplete: false })) : [];
   }
+
+  getUserIdFromEscapedString(str: string) {
+    const regex = /\@(.*?)\|/g;
+    const found = regex.exec(str);
+    return found ? found[1] : null;
+  }
 }

@@ -1,4 +1,4 @@
-import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from "typeorm";
+import { Entity, Column, CreateDateColumn, UpdateDateColumn, PrimaryColumn, ManyToMany, JoinTable } from "typeorm";
 import CommonEntity from "../common-entity";
 
 @Entity()
@@ -27,4 +27,18 @@ export default class User {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @ManyToMany(type => User, { nullable: true, lazy: true })
+    @JoinTable({
+        name: "cc_users_map",
+        joinColumn: {
+            name: "user",
+            referencedColumnName: "id"
+        },
+        inverseJoinColumn: {
+            name: "cc_user",
+            referencedColumnName: "id"
+        }
+    })
+    ccUsers?: Promise<User[]>;
 }

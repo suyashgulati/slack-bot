@@ -45,7 +45,7 @@ export default (userId: string, todos: UserTodo[]) => ({
                 "type": "plain_text",
                 "text": "Enter your tasks separated by new lines like:\nTask 1\nTask 2\nTask 3..."
             },
-            ...(todos.length && {
+            ...(todos?.length && {
                 "initial_value": map(todos, t => `${t.text}${t.isComplete ? ' - Done' : ''}`).join("\n")
             })
         }

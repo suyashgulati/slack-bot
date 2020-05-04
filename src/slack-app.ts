@@ -1,4 +1,5 @@
 import { Service } from "typedi";
+import express from "express";
 import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
 import Route from "./route";
 import Logger from "./shared/logger";
@@ -21,7 +22,8 @@ export default class SlackFactory {
 
     this.expressApp.get('/', (req, res) => {
       res.send({ message: 'API works' });
-    })
+    });
+    this.expressApp.use('/files', express.static('files'));
 
     this.app = new App({
       token: process.env.SLACK_BOT_TOKEN,
@@ -30,7 +32,7 @@ export default class SlackFactory {
     });
 
     this.app.use(async args => {
-      this.logger.log(args);
+      this.logger.logPayload(args);
       args.next();
     });
 

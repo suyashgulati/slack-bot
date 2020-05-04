@@ -1,4 +1,4 @@
-export default (userId) => ({
+export default (userId: string, fromLastDsr: string[]) => ({
 	"callback_id": "wfh_modal",
 	"type": "modal",
 	"title": {
@@ -42,7 +42,10 @@ export default (userId) => ({
 				"placeholder": {
 					"type": "plain_text",
 					"text": "Enter your tasks separated by new lines like:\nTask 1\nTask 2\nTask 3..."
-				}
+				},
+				...(fromLastDsr?.length && {
+					"initial_value": fromLastDsr.join("\n")
+				})
 			}
 		}
 	]

@@ -27,9 +27,4 @@ export default class UserSettings extends CommonEntity {
     @ManyToOne(type => User, { nullable: true, eager: true })
     @JoinColumn()
     toUser?: User;
-
-    @ManyToMany(type => User, { nullable: true, eager: true })
-    @JoinTable()
-    ccUsers?: User[];
-
 }

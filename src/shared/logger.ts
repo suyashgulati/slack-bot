@@ -3,7 +3,7 @@ import { writeFile, readdir, unlink } from "fs";
 
 @Service()
 export default class Logger {
-    log(payload: any) {
+    logPayload(payload: any) {
         if (process.env.ENVIRONMENT === 'dev') {
             this.clearLogs();
             const copiedArgs = JSON.parse(JSON.stringify(payload));
@@ -20,6 +20,12 @@ export default class Logger {
             // );
             const path = `logs/${Date.now()}.json`;
             writeFile(path, JSON.stringify(copiedArgs, null, 2), () => console.log('log written @> ', path));
+        }
+    }
+    log(payload: any, fileName?: string) {
+        if (process.env.ENVIRONMENT === 'dev') {
+            const path = `logs/${fileName ?? Date.now()}.json`;
+            writeFile(path, JSON.stringify(payload), () => console.log('log written @> ', path));
         }
     }
 

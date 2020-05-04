@@ -5,15 +5,15 @@ import Task from "../../shared/interfaces/task";
 
 @Entity()
 export default class DsrEntry extends CommonEntity {
-    @ManyToOne(type => User)
+    @ManyToOne(type => User, { eager: true })
     user: User;
 
-    @Column('text', { array: true })
+    @Column({ type: String, array: true })
     today: string[];
 
-    @Column('text', { array: true })
-    challenges: string[];
+    @Column({ type: String, array: true, nullable: true })
+    challenges?: string[];
 
-    @Column('text', { array: true })
+    @Column({ type: String, array: true })
     tomorrow: string[];
 }
