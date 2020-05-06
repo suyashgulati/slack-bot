@@ -19,9 +19,9 @@ export class DsrEntryRepository extends Repository<DsrEntry> {
         entry.challenges = challenges;
         entry.tomorrow = tomorrow;
         entry.user = new User(userId);
-        return getManager().transaction(async transactionalEntityManager => {
-            await transactionalEntityManager.save(entry);
-            await transactionalEntityManager.delete(UserTodo, { user: { id: userId } });
+        return getManager().transaction(async transaction => {
+            await transaction.save(entry);
+            await transaction.delete(UserTodo, { user: { id: userId } });
         });
     }
 }

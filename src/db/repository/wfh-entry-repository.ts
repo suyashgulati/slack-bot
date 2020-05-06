@@ -12,16 +12,16 @@ import DB from "..";
 @Service()
 @EntityRepository(WfhEntry)
 export class WfhEntryRepository extends Repository<WfhEntry> {
-    
+
     saveWfhEntry(userId: string, tasks: string[]) {
         const user = new User(userId);
         const entry = new WfhEntry();
         entry.tasks = tasks;
         entry.user = user;
         const todos = _.map(tasks, task => new UserTodo(user, task));
-        return getManager().transaction(async transactionalEntityManager => {
-            await transactionalEntityManager.save(entry);
-            await transactionalEntityManager.save(todos);
+        return getManager().transaction(async transaction => {
+            await transaction.save(entry);
+            await transaction.save(todos);
         });
     }
 }
