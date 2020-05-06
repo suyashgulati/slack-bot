@@ -64,7 +64,7 @@ export default (userId: string, todos: UserTodo[]) => ({
             "multiline": true,
             "placeholder": {
                 "type": "plain_text",
-                "text": "Enter your challenges separated by new lines like:\nTask 1\nTask 2\nTask 3..."
+                "text": "Enter your challenges separated by new lines like:\nChallenge 1\nChallenge 2\nChallenge 3..."
             }
         },
         "optional": true

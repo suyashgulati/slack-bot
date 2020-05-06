@@ -1,4 +1,4 @@
-import { config } from 'dotenv';
+import { config } from "dotenv-safe";
 import "reflect-metadata";
 import SlackFactory from './slack-app';
 import { Container } from "typedi";

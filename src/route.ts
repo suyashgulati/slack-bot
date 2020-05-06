@@ -19,7 +19,7 @@ import dsrMsg from "./block-kits/dsr-msg";
 import wsrMsg from "./block-kits/wsr-msg";
 import moment from "moment";
 import { promises as fs } from 'fs';
-import { v4 as uuid } from 'uuid';
+import FSService from "./shared/fsService";
 
 @Service()
 export default class Route {
@@ -32,6 +32,7 @@ export default class Route {
         @InjectRepository(WfhEntry) private wfhRepo: Repository<WfhEntry>,
         @InjectRepository(DsrEntry) private dsrRepo: Repository<DsrEntry>,
         @InjectRepository(UserTodo) private todoRepo: Repository<UserTodo>,
+        private fsService: FSService,
     ) { }
 
     register(app: App) {
@@ -183,12 +184,11 @@ export default class Route {
     }
 
     respondToWSRCommand(respond, userId, downloadUrl) {
-        console.log("respondToWSRCommand -> respond, userId, downloadUrl", respond, userId, downloadUrl)
         try {
             respond({
                 channel: userId,
                 text: `Please download from <${downloadUrl}|here>`,
-                blocks: wsrMsg(userId, `https://0305ecf6.ngrok.io${downloadUrl}`),
+                blocks: wsrMsg(userId, `${process.env.PUBLIC_URL}${downloadUrl}`),
             });
         } catch (error) {
             console.error(error);
@@ -199,24 +199,6 @@ export default class Route {
     async generateWSR(users: string[]): Promise<string> {
         let monday = moment().isoWeekday(1).startOf('day').toDate();
         let dsrs = await this.dsrRepo.find({ where: { user: { id: In(users) }, createdAt: MoreThanOrEqual(monday) } });
-        let dsrGrouped = _.groupBy(dsrs, dsr => dsr.user.id);
-        let path = `/files/asd.json`;
-        await fs.writeFile(`.${path}`, JSON.stringify(dsrGrouped), 'utf8');
-        return path;
+        return this.fsService.generateWSR(dsrs);
     }
 }
-
-
-// app.options({ 'action_id': /^all_user.*/ }, async ({ context, ack, body }) => {
-//     let allUsers = await this.userRepo.findAll();
-//     const options = _.chain(allUsers)
-//         .filter(user => user.name.toLowerCase().includes(body.value.toLowerCase()))
-//         .map(userOptionBuilder);
-//     await ack({ options: options as any });
-// });
-
-// app.message('hello', async ({ say, body, message }) => {
-//     await say({
-//         blocks: dsrMsg(message.user)
-//     } as any);
-// });
