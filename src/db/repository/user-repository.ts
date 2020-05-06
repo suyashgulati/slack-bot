@@ -1,8 +1,8 @@
 import { Repository, EntityRepository } from "typeorm";
 import { Service } from "typedi";
 import NodeCache from "node-cache";
-
 import User from "../entity/user";
+import _ from "lodash";
 
 const CACHE_TTL = 60 * 60 * 1;
 const ALL_USERS_KEY = 'ALL_USERS';
@@ -24,5 +24,11 @@ export class UserRepository extends Repository<User> {
         const allUsersPromise = this.find();
         this.usersCache.set(ALL_USERS_KEY, allUsersPromise);
         return allUsersPromise;
+    }
+
+    async saveSelectedCCUsers(userId: string, ccUserIds: string[]) {
+        const user = await this.findOne({ where: { id: userId } });
+        user.ccUsers = Promise.resolve(_.map(ccUserIds, id => new User(id)));
+        this.save(user);
     }
 }

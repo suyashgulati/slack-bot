@@ -1,13 +1,14 @@
 import { Service } from "typedi";
 import express from "express";
 import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
-import Route from "./route";
+import homeView from './block-kits/home';
 import Logger from "./shared/logger";
+import UserTodo from "./db/entity/user-todo";
 
 @Service()
 export default class SlackFactory {
   constructor(
-    private route: Route,
+    // private route: Route,
     private logger: Logger,
   ) { }
   app: App;
@@ -36,7 +37,49 @@ export default class SlackFactory {
       args.next();
     });
 
-    this.route.register(this.app);
+    // this.route.register(this.app);
     return this.app;
   }
+
+  async openModal(triggerId: string, block: any, callbackId: string) {
+    try {
+      const result = await this.app.client.views.open({
+        token: process.env.SLACK_BOT_TOKEN,
+        trigger_id: triggerId,
+        view: block,
+        callback_id: callbackId,
+      });
+    } catch (error) {
+      console.error(error);
+      console.error(error.data);
+    }
+  }
+
+  async publishHome(userId: string, todos: UserTodo[]) {
+    try {
+      const result = await this.app.client.views.publish({
+        user_id: userId,
+        token: process.env.SLACK_BOT_TOKEN,
+        view: homeView(userId, todos) as any
+      });
+    } catch (error) {
+      console.error(error);
+      console.error(error.data);
+    }
+  }
+
+  async updateHome(userId: string, todos: UserTodo[]) {
+    try {
+      const result = await this.app.client.views.update({
+        token: process.env.SLACK_BOT_TOKEN,
+        external_id: 'app_home_view',
+        view: homeView(userId, todos) as any
+      } as any);
+    } catch (error) {
+      console.error(error);
+      console.error(error.data);
+    }
+  }
+
+
 }

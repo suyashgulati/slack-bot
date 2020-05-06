@@ -20,122 +20,112 @@ import wsrMsg from "./block-kits/wsr-msg";
 import moment from "moment";
 import { promises as fs } from 'fs';
 import FSService from "./shared/fsService";
+import SlackFactory from "./slack-app";
+import { UserTodoRepository } from "./db/repository/user-todo-repository";
+import { WfhEntryRepository } from "./db/repository/wfh-entry-repository";
+import { DsrEntryRepository } from "./db/repository/dsr-entry-repository";
 
 @Service()
 export default class Route {
+    app: App;
     // TODO: Shift magic values to one place
     constructor(
         private methods: Methods,
         @InjectRepository() private readonly userSettingsRepo: UserSettingsRepository,
         @InjectRepository() private readonly userRepo: UserRepository,
-        // @InjectRepository(UserSettings) private userSettingsRepo: Repository<UserSettings>,
-        @InjectRepository(WfhEntry) private wfhRepo: Repository<WfhEntry>,
-        @InjectRepository(DsrEntry) private dsrRepo: Repository<DsrEntry>,
-        @InjectRepository(UserTodo) private todoRepo: Repository<UserTodo>,
+        @InjectRepository() private readonly todoRepo: UserTodoRepository,
+        @InjectRepository() private readonly wfhRepo: WfhEntryRepository,
+        @InjectRepository() private readonly dsrRepo: DsrEntryRepository,
         private fsService: FSService,
-    ) { }
+        private slackFactory: SlackFactory,
+    ) {
+        this.app = this.slackFactory.app;
+    }
 
-    register(app: App) {
-        app.event('app_home_opened', async ({ body, context }) => {
-            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.event.user }, isActive: true }, order: { id: "ASC" }, take: 10 });
-            await this.methods.publishHome(app, context.botToken, body.event.user, todos);
+    register() {
+        this.app.event('app_home_opened', async ({ body, context }) => {
+            const todos: UserTodo[] = await this.todoRepo.getTodosForHome(body.event.user);
+            await this.slackFactory.publishHome(body.event.user, todos);
         });
-        app.action('settings', async ({ body, ack, context }) => {
+        this.app.action('settings', async ({ body, ack, context }) => {
             await ack();
-            let userSett = await this.userSettingsRepo.findOne({ where: { user: { id: body.user.id } } });
+            let userSett = await this.userSettingsRepo.getUserSettings(body.user.id);
             let ccUsers = await (await this.userRepo.findOne({ where: { id: body.user.id } })).ccUsers;
             let b = settings(userSett.wfhTime, userSett.dsrTime, userSett.toUser, ccUsers);
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], b, 'settings')
+            await this.slackFactory.openModal(body['trigger_id'], b, 'settings')
         });
-        app.action('dsr', async ({ body, ack, context }) => {
+        this.app.action('dsr', async ({ body, ack, context }) => {
             await ack();
-            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.user.id }, isActive: true }, order: { id: "ASC" }, take: 10 });
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], dsr(body.user.id, todos), 'dsr')
+            const todos: UserTodo[] = await this.todoRepo.getTodosForHome(body.user.id);
+            await this.slackFactory.openModal(body['trigger_id'], dsr(body.user.id, todos), 'dsr')
         });
-        app.action('wfh', async ({ body, ack, context }) => {
+        this.app.action('wfh', async ({ body, ack, context }) => {
             await ack();
             const lastDsrEntry = await this.dsrRepo.findOne({ where: { user: { id: body.user.id } }, order: { id: "DESC" }, });
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], wfh(body.user.id, lastDsrEntry?.tomorrow), 'wfh')
+            await this.slackFactory.openModal(body['trigger_id'], wfh(body.user.id, lastDsrEntry?.tomorrow), 'wfh')
         });
-        app.action('user_to', async ({ ack, body, action }) => {
+        this.app.action('user_to', async ({ ack, body, action }) => {
             // TODO: Shift magic values to one place
-            const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
-            userSett.toUser = new User(action['selected_user']);
-            this.userSettingsRepo.save(userSett);
+            this.userSettingsRepo.saveSelectedToUser(body.user.id, action['selected_user']);
             await ack();
         });
-        app.action('user_cc', async ({ ack, body, action }) => {
+        this.app.action('user_cc', async ({ ack, body, action }) => {
             // TODO: Shift magic values to one place
-            const user = await this.userRepo.findOne({ where: { id: body.user.id } });
-            user.ccUsers = Promise.resolve(_.map(action['selected_users'], userId => new User(userId)));
-            this.userRepo.save(user);
+            this.userRepo.saveSelectedCCUsers(body.user.id, action['selected_users']);
             await ack();
         });
-        app.action(/^.*_time/, async ({ ack, body, action }) => {
+        this.app.action(/^.*_time/, async ({ ack, body, action }) => {
             const input = action['selected_option'].value;
             const actionId = action['action_id'];
             // TODO: Shift magic values to one place
-            const userSett = await this.userSettingsRepo.findOne({ user: { id: body.user.id } });
-            if (actionId === 'dsr_time') {
-                userSett.dsrTime = input;
-            } else if (actionId === 'wfh_time') {
-                userSett.wfhTime = input;
-            }
-            this.userSettingsRepo.save(userSett);
+            this.userSettingsRepo.saveTime(body.user.id, actionId, input);
             await ack();
         });
-        app.action('home_todo', async ({ ack, body, action, client, context }) => {
+        this.app.action('home_todo', async ({ ack, body, action, client, context }) => {
             await ack();
             // TODO: Shift magic values to one place
-            const todos: UserTodo[] = await this.todoRepo.find({ where: { user: { id: body.user.id }, isActive: true }, order: { id: "ASC" }, take: 10 });
+            const todos: UserTodo[] = await await this.todoRepo.getTodosForHome(body.user.id);
             _.forEach(todos, todo => {
                 const selected = _.some(action['selected_options'], op => todo.id === +op.value);
                 todo.isComplete = selected;
             });
             this.todoRepo.save(todos);
-            this.updateHome(app, context.botToken, body.user.id, todos);
+            this.updateHome(body.user.id, todos);
         });
-        app.action('add_task', async ({ ack, body, action, client, context }) => {
+        this.app.action('add_task', async ({ ack, body, action, client, context }) => {
             await ack();
-            await this.methods.openModal(app, context.botToken, body['trigger_id'], addItemModal(), 'add_task')
+            await this.slackFactory.openModal(body['trigger_id'], addItemModal(), 'add_task')
         });
-        app.action('download_wsr', async ({ ack }) => {
+        this.app.action('download_wsr', async ({ ack }) => {
             await ack();
         });
-        app.view('wfh_modal', async ({ ack, body, context }) => {
+        this.app.view('wfh_modal', async ({ ack, body, context }) => {
+            // TODO: Shift magic values to one place
             const input = body.view.state.values.wfh_block.wfh_input.value;
             const tasks = this.methods.splitInputToArray(input);
-            const user = new User(body.user.id);
-            // TODO: Shift magic values to one place
-            const entry = new WfhEntry();
-            entry.tasks = tasks;
-            entry.user = user;
-            this.wfhRepo.save(entry);
-            const todos = _.map(tasks, task => new UserTodo(user, task));
-            await this.todoRepo.save(todos);
-            this.updateHome(app, context.botToken, body.user.id);
+            await this.wfhRepo.saveWfhEntry(body.user.id, tasks);
+            this.updateHome(body.user.id);
             await ack();
         });
-        app.view('dsr_modal', async ({ ack, body, context }) => {
+        this.app.view('dsr_modal', async ({ ack, body, context }) => {
             const input = body.view.state.values;
-            const entry = new DsrEntry();
-            entry.today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
-            entry.challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
-            entry.tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
-            entry.user = new User(body.user.id);
-            this.dsrRepo.save(entry);
-            await this.todoRepo.delete({ user: { id: body.user.id } });
-            this.updateHome(app, context.botToken, body.user.id);
+            const today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
+            const challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
+            const tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
+            await this.dsrRepo.saveDsrEntry(body.user.id, today, challenges, tomorrow);
+            this.updateHome(body.user.id);
             await ack();
         });
-        app.view('add_task_modal', async ({ ack, body, context }) => {
+        this.app.view('add_task_modal', async ({ ack, body, context }) => {
             await ack();
             const input = body.view.state.values.add_task_block.add_task_input.value;
             const newTodo = new UserTodo(new User(body.user.id), input);
             await this.todoRepo.save(newTodo);
-            this.updateHome(app, context.botToken, body.user.id);
+            this.updateHome(body.user.id);
         });
-        app.command('/wsr', async ({ body, ack, respond }) => {
+
+        //TODO: need to refactor these 2 routes
+        this.app.command('/wsr', async ({ body, ack, respond }) => {
             await ack();
             const userId = body.user_id;
             const allSenders = await this.userSettingsRepo.findAllSenders(userId);
@@ -153,7 +143,7 @@ export default class Route {
                 this.respondToWSRCommand(respond, userId, downloadUrl);
             }
         });
-        app.command('/wsr-user', async ({ command, body, ack, say, respond }) => {
+        this.app.command('/wsr-user', async ({ command, body, ack, say, respond }) => {
             await ack();
             const userId = body.user_id;
             const allSenders = await this.userSettingsRepo.findAllSenders(userId);
@@ -176,11 +166,11 @@ export default class Route {
     }
 
     // Todo: Move to service.ts
-    async updateHome(app: App, botToken: string, userId: string, todos?: UserTodo[]) {
+    async updateHome(userId: string, todos?: UserTodo[]) {
         if (!todos) {
-            todos = await this.todoRepo.find({ where: { user: { id: userId }, isActive: true }, order: { id: "ASC" }, take: 10 });
+            todos = await this.todoRepo.getTodosForHome(userId);
         }
-        this.methods.updateHome(app, botToken, userId, todos);
+        this.slackFactory.updateHome(userId, todos);
     }
 
     respondToWSRCommand(respond, userId, downloadUrl) {

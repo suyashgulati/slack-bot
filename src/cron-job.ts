@@ -25,7 +25,7 @@ export default class CronJob {
     }
 
     async halfHourlyTask() {
-        const now = moment().utc().add('h', 5).add('m', 30);
+        const now = moment().utc().add(5, 'h').add(30, 'm');
         const hour = now.hour();
         const minute = now.minute() > 30 ? 5 : 0;
         const nowTime = `${hour}.${minute}`;

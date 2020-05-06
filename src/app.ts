@@ -1,18 +1,22 @@
 import { config } from "dotenv-safe";
 import "reflect-metadata";
+import DB from "./db";
 import SlackFactory from './slack-app';
 import { Container } from "typedi";
-import initDb from './db';
 import CronJob from './cron-job';
+import Route from "./route";
 
 // env
 config();
 (async () => {
-  await initDb();
+  let db = Container.get(DB);
+  await db.init();
 
   let slackFactory = Container.get(SlackFactory);
   let slackApp = slackFactory.create();
-  
+
+  let route = Container.get(Route).register();
+
   slackApp.error(async (error) => {
     // Check the details of the error to handle special cases (such as stopping the app or retrying the sending of a message)
     console.error(error);
