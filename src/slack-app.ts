@@ -4,6 +4,7 @@ import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
 import homeView from './block-kits/home';
 import Logger from "./shared/logger";
 import UserTodo from "./db/entity/user-todo";
+import axios from "axios";
 
 @Service()
 export default class SlackFactory {
@@ -72,7 +73,7 @@ export default class SlackFactory {
     try {
       const result = await this.app.client.views.update({
         token: process.env.SLACK_BOT_TOKEN,
-        external_id: 'app_home_view',
+        external_id: `app_home_view_${userId}`,
         view: homeView(userId, todos) as any
       } as any);
     } catch (error) {

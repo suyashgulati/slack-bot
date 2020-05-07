@@ -7,7 +7,7 @@ export default (userId: string, todos: UserTodo[]) => {
   const completedOptions = chain(todos).filter({ isComplete: true }).map(todoItemBuilder).value();
   const view = {
     "type": "home",
-    "external_id": "app_home_view",
+    "external_id": `app_home_view_${userId}`,
     "blocks": [
       {
         "type": "section",

@@ -8,7 +8,7 @@ import { InjectRepository } from "typeorm-typedi-extensions";
 import { Repository, In, MoreThan, MoreThanOrEqual } from "typeorm";
 import { UserRepository } from "./db/repository/user-repository";
 import { UserSettingsRepository } from "./db/repository/user-settings-repository";
-import _, { Dictionary } from "lodash";
+import _ from "lodash";
 // import userOptionBuilder from "./block-kits/builders/user-option-builder";
 import WfhEntry from "./db/entity/wfh-entry";
 import User from "./db/entity/user";
@@ -106,6 +106,7 @@ export default class Route {
             await this.wfhRepo.saveWfhEntry(body.user.id, tasks);
             this.updateHome(body.user.id);
             await ack();
+            this.sendMail(body.user.name, 'WFH');
         });
         this.app.view('dsr_modal', async ({ ack, body, context }) => {
             const input = body.view.state.values;
@@ -115,6 +116,7 @@ export default class Route {
             await this.dsrRepo.saveDsrEntry(body.user.id, today, challenges, tomorrow);
             this.updateHome(body.user.id);
             await ack();
+            this.sendMail(body.user.name, 'DSR');
         });
         this.app.view('add_task_modal', async ({ ack, body, context }) => {
             await ack();
@@ -191,4 +193,9 @@ export default class Route {
         let dsrs = await this.dsrRepo.find({ where: { user: { id: In(users) }, createdAt: MoreThanOrEqual(monday) } });
         return this.fsService.generateWSR(dsrs);
     }
+
+    sendMail(user, type) {
+        console.log(`\x1b[44m${type} Mail Sent on behalf of ${user}\x1b[0m`)
+    }
+
 }
