@@ -1,29 +1,25 @@
 import { Service } from "typedi";
 import { App } from "@slack/bolt";
 import Methods from "./methods";
-import dsr from "./block-kits/dsr";
-import wfh from "./block-kits/wfh";
+import dsrBlockKit from "./block-kits/dsr";
+import wfhBlockKit from "./block-kits/wfh";
 import settings from "./block-kits/settings";
 import { InjectRepository } from "typeorm-typedi-extensions";
-import { Repository, In, MoreThan, MoreThanOrEqual } from "typeorm";
+import { In, MoreThanOrEqual } from "typeorm";
 import { UserRepository } from "./db/repository/user-repository";
 import { UserSettingsRepository } from "./db/repository/user-settings-repository";
 import _ from "lodash";
 // import userOptionBuilder from "./block-kits/builders/user-option-builder";
-import WfhEntry from "./db/entity/wfh-entry";
 import User from "./db/entity/user";
-import DsrEntry from "./db/entity/dsr-entry";
-import UserTodo from "./db/entity/user-todo";
 import addItemModal from "./block-kits/add-task-modal";
-import dsrMsg from "./block-kits/dsr-msg";
 import wsrMsg from "./block-kits/wsr-msg";
 import moment from "moment";
-import { promises as fs } from 'fs';
 import FSService from "./shared/fsService";
 import SlackFactory from "./slack-app";
 import { UserTodoRepository } from "./db/repository/user-todo-repository";
 import { WfhEntryRepository } from "./db/repository/wfh-entry-repository";
 import { DsrEntryRepository } from "./db/repository/dsr-entry-repository";
+import UserTodo from "./db/entity/user-todo";
 
 @Service()
 export default class Route {
@@ -57,29 +53,29 @@ export default class Route {
         this.app.action('dsr', async ({ body, ack, context }) => {
             await ack();
             const todos: UserTodo[] = await this.todoRepo.getTodosForHome(body.user.id);
-            await this.slackFactory.openModal(body['trigger_id'], dsr(body.user.id, todos), 'dsr')
+            await this.slackFactory.openModal(body['trigger_id'], dsrBlockKit(body.user.id, todos), 'dsr')
         });
         this.app.action('wfh', async ({ body, ack, context }) => {
             await ack();
             const lastDsrEntry = await this.dsrRepo.findOne({ where: { user: { id: body.user.id } }, order: { id: "DESC" }, });
-            await this.slackFactory.openModal(body['trigger_id'], wfh(body.user.id, lastDsrEntry?.tomorrow), 'wfh')
+            await this.slackFactory.openModal(body['trigger_id'], wfhBlockKit(body.user.id, lastDsrEntry?.tomorrow), 'wfh')
         });
         this.app.action('user_to', async ({ ack, body, action }) => {
+            await ack();
             // TODO: Shift magic values to one place
             this.userSettingsRepo.saveSelectedToUser(body.user.id, action['selected_user']);
-            await ack();
         });
         this.app.action('user_cc', async ({ ack, body, action }) => {
+            await ack();
             // TODO: Shift magic values to one place
             this.userRepo.saveSelectedCCUsers(body.user.id, action['selected_users']);
-            await ack();
         });
         this.app.action(/^.*_time/, async ({ ack, body, action }) => {
+            await ack();
             const input = action['selected_option'].value;
             const actionId = action['action_id'];
             // TODO: Shift magic values to one place
             this.userSettingsRepo.saveTime(body.user.id, actionId, input);
-            await ack();
         });
         this.app.action('home_todo', async ({ ack, body, action, client, context }) => {
             await ack();
@@ -100,22 +96,24 @@ export default class Route {
             await ack();
         });
         this.app.view('wfh_modal', async ({ ack, body, context }) => {
-            // TODO: Shift magic values to one place
-            const input = body.view.state.values.wfh_block.wfh_input.value;
-            const tasks = this.methods.splitInputToArray(input);
-            await this.wfhRepo.saveWfhEntry(body.user.id, tasks);
-            this.updateHome(body.user.id);
             await ack();
+            // TODO: Shift magic values to one place
+            const input = body.view.state.values;
+            const date = input.wfh_time_block.wfh_date_input.selected_date;
+            const tasks = this.methods.splitInputToArray(input.wfh_block.wfh_input.value);
+            await this.wfhRepo.saveWfhEntry(body.user.id, date, tasks);
+            this.updateHome(body.user.id);
             this.sendMail(body.user.name, 'WFH');
         });
         this.app.view('dsr_modal', async ({ ack, body, context }) => {
+            await ack();
             const input = body.view.state.values;
+            const date = input.dsr_date_block.dsr_date_input.selected_date;
             const today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
             const challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
             const tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
-            await this.dsrRepo.saveDsrEntry(body.user.id, today, challenges, tomorrow);
+            await this.dsrRepo.saveDsrEntry(body.user.id, date, today, challenges, tomorrow);
             this.updateHome(body.user.id);
-            await ack();
             this.sendMail(body.user.name, 'DSR');
         });
         this.app.view('add_task_modal', async ({ ack, body, context }) => {

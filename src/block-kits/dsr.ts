@@ -1,5 +1,6 @@
 import UserTodo from "../db/entity/user-todo";
 import { map } from "lodash";
+import moment from "moment";
 
 export default (userId: string, todos: UserTodo[]) => ({
     "callback_id": "dsr_modal",
@@ -28,6 +29,25 @@ export default (userId: string, todos: UserTodo[]) => ({
     },
     {
         "type": "divider"
+    },
+    {
+        "block_id": "dsr_date_block",
+        "type": "input",
+        "element": {
+            "action_id": "dsr_date_input",
+            "type": "datepicker",
+            "initial_date": moment().format('YYYY-MM-DD'),
+            "placeholder": {
+                "type": "plain_text",
+                "text": "Select a Date",
+                "emoji": true
+            }
+        },
+        "label": {
+            "type": "plain_text",
+            "text": "Select the Date",
+            "emoji": true
+        }
     },
     {
         "block_id": "dsr_1_block",
@@ -86,6 +106,7 @@ export default (userId: string, todos: UserTodo[]) => ({
                 "text": "Enter your tasks separated by new lines like:\nTask 1\nTask 2\nTask 3..."
             }
         },
+        "optional": true
     }
     ]
 })

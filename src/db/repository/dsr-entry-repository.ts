@@ -13,8 +13,9 @@ import DsrEntry from "../entity/dsr-entry";
 @Service()
 @EntityRepository(DsrEntry)
 export class DsrEntryRepository extends Repository<DsrEntry> {
-    saveDsrEntry(userId: string, today: string[], challenges: string[], tomorrow: string[]) {
+    saveDsrEntry(userId: string, date: string, today: string[], challenges: string[], tomorrow: string[]) {
         const entry = new DsrEntry();
+        entry.date = date;
         entry.today = today;
         entry.challenges = challenges;
         entry.tomorrow = tomorrow;

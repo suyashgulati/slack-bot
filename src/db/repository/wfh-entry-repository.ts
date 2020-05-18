@@ -13,9 +13,10 @@ import DB from "..";
 @EntityRepository(WfhEntry)
 export class WfhEntryRepository extends Repository<WfhEntry> {
 
-    saveWfhEntry(userId: string, tasks: string[]) {
+    saveWfhEntry(userId: string, date: string, tasks: string[]) {
         const user = new User(userId);
         const entry = new WfhEntry();
+        entry.date = date;
         entry.tasks = tasks;
         entry.user = user;
         const todos = _.map(tasks, task => new UserTodo(user, task));

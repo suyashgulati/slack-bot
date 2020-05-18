@@ -8,6 +8,9 @@ export default class WfhEntry extends CommonEntity {
     @ManyToOne(type => User, { eager: true })
     user: User;
 
+    @Column({ type: String })
+    date: string;
+
     @Column({ type: String, array: true })
     tasks: string[];
 }

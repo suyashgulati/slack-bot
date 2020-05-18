@@ -1,3 +1,5 @@
+import moment from "moment";
+
 export default (userId: string, fromLastDsr: string[]) => ({
 	"callback_id": "wfh_modal",
 	"type": "modal",
@@ -26,6 +28,25 @@ export default (userId: string, fromLastDsr: string[]) => ({
 		},
 		{
 			"type": "divider"
+		},
+		{
+			"block_id": "wfh_date_block",
+			"type": "input",
+			"element": {
+				"action_id": "wfh_date_input",
+				"type": "datepicker",
+				"initial_date": moment().format('YYYY-MM-DD'),
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select a Date",
+					"emoji": true
+				}
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Select the Date",
+				"emoji": true
+			}
 		},
 		{
 			"type": "input",
