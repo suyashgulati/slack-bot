@@ -99,7 +99,7 @@ export default class Route {
             await ack();
             // TODO: Shift magic values to one place
             const input = body.view.state.values;
-            const date = input.wfh_time_block.wfh_date_input.selected_date;
+            const date = input.wfh_date_block.wfh_date_input.selected_date;
             const tasks = this.methods.splitInputToArray(input.wfh_block.wfh_input.value);
             await this.wfhRepo.saveWfhEntry(body.user.id, date, tasks);
             this.updateHome(body.user.id);
