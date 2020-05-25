@@ -1,4 +1,4 @@
-export default interface Task {
+export default interface ITask {
     text: string;
     isComplete: boolean;
 }

@@ -13,16 +13,21 @@ import DB from "..";
 @EntityRepository(WfhEntry)
 export class WfhEntryRepository extends Repository<WfhEntry> {
 
-    saveWfhEntry(userId: string, date: string, tasks: string[]) {
+    saveWfhEntry(userId: string, date: string, tasks: string[], messageId: string) {
         const user = new User(userId);
         const entry = new WfhEntry();
         entry.date = date;
         entry.tasks = tasks;
         entry.user = user;
+        entry.messageId = messageId;
         const todos = _.map(tasks, task => new UserTodo(user, task));
         return getManager().transaction(async transaction => {
             await transaction.save(entry);
             await transaction.save(todos);
         });
+    }
+
+    getWfhForSameDate(userId: string, date: string) {
+        return this.findOne({ where: { user: { id: userId }, date }, order: { createdAt: 'DESC' } });
     }
 }

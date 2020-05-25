@@ -1,4 +1,4 @@
-export interface CsvUser {
+export interface ICsvUser {
     username: string;
     email: string;
     status: string;

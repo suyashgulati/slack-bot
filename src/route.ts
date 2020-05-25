@@ -9,7 +9,6 @@ import { In, MoreThanOrEqual } from "typeorm";
 import { UserRepository } from "./db/repository/user-repository";
 import { UserSettingsRepository } from "./db/repository/user-settings-repository";
 import _ from "lodash";
-// import userOptionBuilder from "./block-kits/builders/user-option-builder";
 import User from "./db/entity/user";
 import addItemModal from "./block-kits/add-task-modal";
 import wsrMsg from "./block-kits/wsr-msg";
@@ -20,6 +19,10 @@ import { UserTodoRepository } from "./db/repository/user-todo-repository";
 import { WfhEntryRepository } from "./db/repository/wfh-entry-repository";
 import { DsrEntryRepository } from "./db/repository/dsr-entry-repository";
 import UserTodo from "./db/entity/user-todo";
+import MailService from "./shared/mailer/mail";
+import dsrMail from "./shared/mailer/templates/dsr-mail";
+import wfhMail from "./shared/mailer/templates/wfh-mail";
+import IMailOptions from "./shared/interfaces/mail-options";
 
 @Service()
 export default class Route {
@@ -34,6 +37,7 @@ export default class Route {
         @InjectRepository() private readonly dsrRepo: DsrEntryRepository,
         private fsService: FSService,
         private slackFactory: SlackFactory,
+        private mailService: MailService,
     ) {
         this.app = this.slackFactory.app;
     }
@@ -101,9 +105,9 @@ export default class Route {
             const input = body.view.state.values;
             const date = input.wfh_date_block.wfh_date_input.selected_date;
             const tasks = this.methods.splitInputToArray(input.wfh_block.wfh_input.value);
-            await this.wfhRepo.saveWfhEntry(body.user.id, date, tasks);
+            const mailResult = await this.mailService.sendMail(await this.getWFHMailObject(body.user.id, date, tasks));
+            await this.wfhRepo.saveWfhEntry(body.user.id, date, tasks, mailResult.messageId);
             this.updateHome(body.user.id);
-            this.sendMail(body.user.name, 'WFH');
         });
         this.app.view('dsr_modal', async ({ ack, body, context }) => {
             await ack();
@@ -112,9 +116,9 @@ export default class Route {
             const today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
             const challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
             const tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
+            await this.mailService.sendMail(await this.getDSRMailObject(body.user.id, date, today, challenges, tomorrow));
             await this.dsrRepo.saveDsrEntry(body.user.id, date, today, challenges, tomorrow);
             this.updateHome(body.user.id);
-            this.sendMail(body.user.name, 'DSR');
         });
         this.app.view('add_task_modal', async ({ ack, body, context }) => {
             await ack();
@@ -192,8 +196,40 @@ export default class Route {
         return this.fsService.generateWSR(dsrs);
     }
 
-    sendMail(user, type) {
-        console.log(`\x1b[44m${type} Mail Sent on behalf of ${user}\x1b[0m`)
+    async getMailRecepients(userId) {
+        let userSett = await this.userSettingsRepo.getUserSettings(userId);
+        console.log('getMailRecepients -> userSett', userSett);
+        let ccUsers = await (await this.userRepo.findOne({ where: { id: userId } })).ccUsers;
+        return {
+            user: userSett.user,
+            to: userSett.toUser,
+            cc: ccUsers,
+        }
     }
 
+    getMailSubject(sender: string, date: string) { return `${sender} - ${date} - Work Status` }
+
+    async getWFHMailObject(userId: string, date: string, tasks: string[]): Promise<IMailOptions> {
+        const { user, to, cc } = await this.getMailRecepients(userId);
+        return {
+            user: user.name,
+            to: to.email,
+            cc: cc.map(u => u.email),
+            subject: this.getMailSubject(user.name, date),
+            html: wfhMail(tasks),
+        }
+    }
+
+    async getDSRMailObject(userId: string, date: string, today: string[], challenges: string[], tomorrow: string[]): Promise<IMailOptions> {
+        const { user, to, cc } = await this.getMailRecepients(userId);
+        const messageId = (await this.wfhRepo.getWfhForSameDate(userId, date)).messageId;
+        return {
+            user: user.name,
+            to: to.email,
+            cc: cc.map(u => u.email),
+            subject: this.getMailSubject(user.name, date),
+            html: dsrMail(today, challenges, tomorrow),
+            messageId
+        }
+    }
 }

@@ -32,7 +32,11 @@ export default class Logger {
     clearLogs() {
         readdir('logs', (error, files) => {
             if (files.length > 10) {
-                files.forEach(file => unlink(`logs/${file}`, () => console.log('logs deleted')))
+                files.forEach(file => {
+                    if (file !== '.gitignore') {
+                        unlink(`logs/${file}`, () => console.log('logs deleted'))
+                    }
+                })
             }
         });
     }
