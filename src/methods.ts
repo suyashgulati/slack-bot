@@ -1,17 +1,14 @@
 import { Service } from "typedi";
-import { App } from "@slack/bolt";
-import Task from "./shared/interfaces/task";
-import UserTodo from "./db/entity/user-todo";
+import ITask from "./shared/interfaces/task";
 
 @Service()
 export default class Methods {
-  constructor() { }
 
   splitInputToArray(tasks: string): string[] {
     return tasks ? tasks.split('\n').map(str => str.trim()) : [];
   }
 
-  splitInputToTasks(tasks: string): Task[] {
+  splitInputToTasks(tasks: string): ITask[] {
     return tasks ? tasks.split('\n').map(str => ({ text: str.trim(), isComplete: false })) : [];
   }
 

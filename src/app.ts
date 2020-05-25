@@ -5,12 +5,16 @@ import SlackFactory from './slack-app';
 import { Container } from "typedi";
 import CronJob from './cron-job';
 import Route from "./route";
+import MailService from "./shared/mailer/mail";
 
 // env
 config();
 (async () => {
   let db = Container.get(DB);
   await db.init();
+
+  let mailer = Container.get(MailService);
+  mailer.init();
 
   let slackFactory = Container.get(SlackFactory);
   let slackApp = slackFactory.create();

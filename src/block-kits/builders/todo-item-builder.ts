@@ -1,7 +1,6 @@
-import Task from "../../shared/interfaces/task";
 import UserTodo from "../../db/entity/user-todo";
 
-export default (todo: UserTodo, index: number) => ({
+export default (todo: UserTodo) => ({
   "text": {
     "type": "mrkdwn",
     "text": todo.text,

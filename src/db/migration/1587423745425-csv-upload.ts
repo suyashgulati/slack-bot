@@ -4,14 +4,14 @@ import User from "../entity/user";
 import UserSettings from "../entity/user-settings";
 import { Time } from "../../shared/enums/time";
 import * as faker from 'faker';
-import { CsvUser } from "../../shared/interfaces/csv-user";
+import { ICsvUser } from "../../shared/interfaces/csv-user";
 const csv = require('csvtojson')
 
 export class csvUpload1587423745425 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
         const csvFilePath = `${process.cwd()}/slack-users.csv`;
-        const usersData: CsvUser[] = await csv().fromFile(csvFilePath);
+        const usersData: ICsvUser[] = await csv().fromFile(csvFilePath);
         const users = usersData.filter(({ status }) => status !== 'Bot')
             .map((csvUser) => {
                 const user = new User();
