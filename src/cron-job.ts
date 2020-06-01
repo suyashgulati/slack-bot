@@ -33,27 +33,12 @@ export default class CronJob {
         forEach(allUserSettings, async userSett => {
             let userId = userSett.user.id;
             if (userSett.wfhTime === nowTime) {
-                this.sendMessage(userId, wfhMsg(userId))
+                this.slackFactory.sendMessage(userId, 'WFH Reminder', false, wfhMsg(userId))
             }
             if (userSett.dsrTime === nowTime) {
-                this.sendMessage(userId, dsrMsg(userId))
+                this.slackFactory.sendMessage(userId, 'DSR Reminder', false, dsrMsg(userId))
             }
         });
     }
 
-    async sendMessage(userId: string, blocks: (KnownBlock | Block)[]) {
-        try {
-            // Call the chat.scheduleMessage method with a token
-            const result = await this.slackFactory.app.client.chat.postMessage({
-                // The token you used to initialize your app is stored in the `context` object
-                token: process.env.SLACK_BOT_TOKEN,
-                channel: userId,
-                text: 'Message',
-                blocks
-            });
-        }
-        catch (error) {
-            console.error(error);
-        }
-    }
 }

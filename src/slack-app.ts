@@ -1,10 +1,11 @@
-import { Service } from "typedi";
 import express from "express";
+import { Service } from "typedi";
 import { App, ExpressReceiver, LogLevel } from "@slack/bolt";
 import homeView from './block-kits/home';
 import Logger from "./shared/logger";
 import UserTodo from "./db/entity/user-todo";
-import axios from "axios";
+import { KnownBlock, Block } from "@slack/types";
+import { UI } from 'bull-board';
 
 @Service()
 export default class SlackFactory {
@@ -21,6 +22,8 @@ export default class SlackFactory {
     });
 
     this.expressApp = expressReceiver.app;
+
+    this.registerBull();
 
     this.expressApp.get('/', (req, res) => {
       res.send({ message: 'API works' });
@@ -40,6 +43,10 @@ export default class SlackFactory {
 
     // this.route.register(this.app);
     return this.app;
+  }
+
+  registerBull() {
+    this.expressApp.use('/admin/queues', UI);
   }
 
   async openModal(triggerId: string, block: any, callbackId: string) {
@@ -82,5 +89,29 @@ export default class SlackFactory {
     }
   }
 
+  sendMessage(userId: string, text: string, isEphemeral?: boolean, blocks?: (KnownBlock | Block)[]) {
+    try {
+      if (isEphemeral) {
+        this.app.client.chat.postEphemeral({
+          token: process.env.SLACK_BOT_TOKEN,
+          channel: userId,
+          text,
+          blocks,
+          user: userId,
+        });
+      } else {
+        this.app.client.chat.postMessage({
+          mrkdwn: true,
+          token: process.env.SLACK_BOT_TOKEN,
+          channel: userId,
+          text,
+          blocks,
+        });
+      }
+    }
+    catch (error) {
+      console.error(error);
+    }
+  }
 
 }

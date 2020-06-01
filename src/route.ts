@@ -16,13 +16,14 @@ import moment from "moment";
 import FSService from "./shared/fsService";
 import SlackFactory from "./slack-app";
 import { UserTodoRepository } from "./db/repository/user-todo-repository";
-import { WfhEntryRepository } from "./db/repository/wfh-entry-repository";
-import { DsrEntryRepository } from "./db/repository/dsr-entry-repository";
+import { DailyEntryRepository } from "./db/repository/daily-entry-repository";
 import UserTodo from "./db/entity/user-todo";
-import MailService from "./shared/mailer/mail";
 import dsrMail from "./shared/mailer/templates/dsr-mail";
 import wfhMail from "./shared/mailer/templates/wfh-mail";
 import IMailOptions from "./shared/interfaces/mail-options";
+import { QueueService } from "./shared/queue";
+import { IType } from "./shared/enums/type";
+import { WfhEntryExistsError, DsrMissingError } from "./shared/errors/daily-entry-errors";
 
 @Service()
 export default class Route {
@@ -33,11 +34,10 @@ export default class Route {
         @InjectRepository() private readonly userSettingsRepo: UserSettingsRepository,
         @InjectRepository() private readonly userRepo: UserRepository,
         @InjectRepository() private readonly todoRepo: UserTodoRepository,
-        @InjectRepository() private readonly wfhRepo: WfhEntryRepository,
-        @InjectRepository() private readonly dsrRepo: DsrEntryRepository,
+        @InjectRepository() private readonly dailyEntryRepo: DailyEntryRepository,
         private fsService: FSService,
         private slackFactory: SlackFactory,
-        private mailService: MailService,
+        private queueService: QueueService,
     ) {
         this.app = this.slackFactory.app;
     }
@@ -61,7 +61,7 @@ export default class Route {
         });
         this.app.action('wfh', async ({ body, ack, context }) => {
             await ack();
-            const lastDsrEntry = await this.dsrRepo.findOne({ where: { user: { id: body.user.id } }, order: { id: "DESC" }, });
+            const lastDsrEntry = await this.dailyEntryRepo.getLastDailyEntry(body.user.id)
             await this.slackFactory.openModal(body['trigger_id'], wfhBlockKit(body.user.id, lastDsrEntry?.tomorrow), 'wfh')
         });
         this.app.action('user_to', async ({ ack, body, action }) => {
@@ -101,24 +101,36 @@ export default class Route {
         });
         this.app.view('wfh_modal', async ({ ack, body, context }) => {
             await ack();
-            // TODO: Shift magic values to one place
+            const userId = body.user.id;
             const input = body.view.state.values;
             const date = input.wfh_date_block.wfh_date_input.selected_date;
             const tasks = this.methods.splitInputToArray(input.wfh_block.wfh_input.value);
-            const mailResult = await this.mailService.sendMail(await this.getWFHMailObject(body.user.id, date, tasks));
-            await this.wfhRepo.saveWfhEntry(body.user.id, date, tasks, mailResult.messageId);
-            this.updateHome(body.user.id);
+            this.queueService.addMailJob(await this.getWFHMailObject(userId, date, tasks));
+            try {
+                await this.dailyEntryRepo.saveWfhEntry(userId, date, tasks);
+            } catch (e) {
+                if (e instanceof WfhEntryExistsError) {
+                    this.slackFactory.sendMessage(userId, 'You already added WFH for today! :+1:', false); // TODO:Magic
+                } else if (e instanceof DsrMissingError) {
+                    this.slackFactory.sendMessage(userId, 'WFH Entry not saved :warning:\nYou need to punch in yesterday\'s DSR first! :+1:', false); // TODO:Magic
+                } else {
+                    this.slackFactory.sendMessage(userId, 'WFH Entry not saved :warning:\n Server Issue! Please Report to HR!', false); // TODO:Magic
+                }
+                console.error(e);
+            }
+            this.updateHome(userId);
         });
         this.app.view('dsr_modal', async ({ ack, body, context }) => {
             await ack();
+            const userId = body.user.id;
             const input = body.view.state.values;
             const date = input.dsr_date_block.dsr_date_input.selected_date;
             const today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
             const challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
             const tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
-            await this.mailService.sendMail(await this.getDSRMailObject(body.user.id, date, today, challenges, tomorrow));
-            await this.dsrRepo.saveDsrEntry(body.user.id, date, today, challenges, tomorrow);
-            this.updateHome(body.user.id);
+            this.queueService.addMailJob(await this.getDSRMailObject(userId, date, today, challenges, tomorrow));
+            await this.dailyEntryRepo.saveDsrEntry(userId, date, today, challenges, tomorrow);
+            this.updateHome(userId);
         });
         this.app.view('add_task_modal', async ({ ack, body, context }) => {
             await ack();
@@ -192,13 +204,12 @@ export default class Route {
 
     async generateWSR(users: string[]): Promise<string> {
         let monday = moment().isoWeekday(1).startOf('day').toDate();
-        let dsrs = await this.dsrRepo.find({ where: { user: { id: In(users) }, createdAt: MoreThanOrEqual(monday) } });
+        let dsrs = await this.dailyEntryRepo.find({ where: { user: { id: In(users) }, createdAt: MoreThanOrEqual(monday) } });
         return this.fsService.generateWSR(dsrs);
     }
 
     async getMailRecepients(userId) {
         let userSett = await this.userSettingsRepo.getUserSettings(userId);
-        console.log('getMailRecepients -> userSett', userSett);
         let ccUsers = await (await this.userRepo.findOne({ where: { id: userId } })).ccUsers;
         return {
             user: userSett.user,
@@ -212,23 +223,27 @@ export default class Route {
     async getWFHMailObject(userId: string, date: string, tasks: string[]): Promise<IMailOptions> {
         const { user, to, cc } = await this.getMailRecepients(userId);
         return {
-            user: user.name,
-            to: to.email,
+            type: IType.WFH,
+            userId: user.id,
+            to: to?.email,
             cc: cc.map(u => u.email),
             subject: this.getMailSubject(user.name, date),
             html: wfhMail(tasks),
+            date,
         }
     }
 
     async getDSRMailObject(userId: string, date: string, today: string[], challenges: string[], tomorrow: string[]): Promise<IMailOptions> {
         const { user, to, cc } = await this.getMailRecepients(userId);
-        const messageId = (await this.wfhRepo.getWfhForSameDate(userId, date)).messageId;
+        const messageId = (await this.dailyEntryRepo.getTodayEntry(userId, date)).messageId;
         return {
-            user: user.name,
-            to: to.email,
+            type: IType.DSR,
+            userId: user.id,
+            to: to?.email,
             cc: cc.map(u => u.email),
             subject: this.getMailSubject(user.name, date),
             html: dsrMail(today, challenges, tomorrow),
+            date,
             messageId
         }
     }

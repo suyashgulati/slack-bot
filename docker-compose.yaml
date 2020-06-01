@@ -6,3 +6,10 @@ pg-db:
   environment:
     - POSTGRES_USER=postgres
     - POSTGRES_PASSWORD=password
+
+redis:
+  container_name: redis
+  image: redis:latest
+  hostname: redis
+  ports:
+    - "6379:6379"

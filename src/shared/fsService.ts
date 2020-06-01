@@ -1,7 +1,7 @@
 import { Service } from "typedi";
 import { promises as fs, readdir, unlink } from "fs";
 import { v4 as uuid } from 'uuid';
-import DsrEntry from "../db/entity/dsr-entry";
+import DailyEntry from "../db/entity/daily-entry";
 import _ from "lodash";
 
 @Service()
@@ -13,7 +13,7 @@ export default class FSService {
         return path;
     }
 
-    async generateWSR(dsrs: DsrEntry[]) {
+    async generateWSR(dsrs: DailyEntry[]) {
         const dsrGrouped = _.groupBy(dsrs, dsr => dsr.user.name);
         let stringForCSV = '';
         _.map(dsrGrouped, (val, key) => {

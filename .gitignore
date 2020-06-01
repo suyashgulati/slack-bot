@@ -107,3 +107,6 @@ dist
 
 # MacOS file
 .DS_Store
+
+# Users CSV
+slack-users.csv

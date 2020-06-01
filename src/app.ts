@@ -6,6 +6,7 @@ import { Container } from "typedi";
 import CronJob from './cron-job';
 import Route from "./route";
 import MailService from "./shared/mailer/mail";
+import { QueueService } from "./shared/queue";
 
 // env
 config();
@@ -33,4 +34,5 @@ config();
   let cronJob = Container.get(CronJob);
   cronJob.start();
 
+  Container.get(QueueService);
 })();
