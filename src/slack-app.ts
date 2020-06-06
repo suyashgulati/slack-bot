@@ -89,29 +89,38 @@ export default class SlackFactory {
     }
   }
 
-  sendMessage(userId: string, text: string, isEphemeral?: boolean, blocks?: (KnownBlock | Block)[]) {
+  sendMessage(userId: string, text: string, blocks?: (KnownBlock | Block)[]) {
     try {
-      if (isEphemeral) {
-        this.app.client.chat.postEphemeral({
-          token: process.env.SLACK_BOT_TOKEN,
-          channel: userId,
-          text,
-          blocks,
-          user: userId,
-        });
-      } else {
-        this.app.client.chat.postMessage({
-          mrkdwn: true,
-          token: process.env.SLACK_BOT_TOKEN,
-          channel: userId,
-          text,
-          blocks,
-        });
-      }
+      this.app.client.chat.postMessage({
+        mrkdwn: true,
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: userId,
+        text,
+        blocks,
+      });
     }
     catch (error) {
       console.error(error);
     }
+  }
+
+  sendEphemeralMessage(userId: string, text: string, blocks?: (KnownBlock | Block)[]) {
+    try {
+      this.app.client.chat.postEphemeral({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: userId,
+        text,
+        blocks,
+        user: userId,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  sendErrorMessage(userId: string, text: string, blocks?: (KnownBlock | Block)[]) {
+    console.error(`Error message sent to user ${userId}`, text);
+    this.sendMessage(userId, text, blocks); //TODO: sendEphemeralMessage instead when users get acquinted + no more server issues
   }
 
 }

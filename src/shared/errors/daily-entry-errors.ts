@@ -5,7 +5,19 @@ class DailyEntryError extends Error {
     }
 }
 
-export class WfhEntryExistsError extends DailyEntryError {
+export class WfhExistsError extends DailyEntryError {
+    constructor(message) {
+        super(message);
+    }
+}
+
+export class WfhMissingError extends DailyEntryError {
+    constructor(message) {
+        super(message);
+    }
+}
+
+export class DsrExistsError extends DailyEntryError {
     constructor(message) {
         super(message);
     }

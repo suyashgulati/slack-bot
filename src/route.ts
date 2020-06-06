@@ -23,7 +23,7 @@ import wfhMail from "./shared/mailer/templates/wfh-mail";
 import IMailOptions from "./shared/interfaces/mail-options";
 import { QueueService } from "./shared/queue";
 import { IType } from "./shared/enums/type";
-import { WfhEntryExistsError, DsrMissingError } from "./shared/errors/daily-entry-errors";
+import { DsrMissingError, WfhMissingError, WfhExistsError, DsrExistsError } from "./shared/errors/daily-entry-errors";
 
 @Service()
 export default class Route {
@@ -105,16 +105,17 @@ export default class Route {
             const input = body.view.state.values;
             const date = input.wfh_date_block.wfh_date_input.selected_date;
             const tasks = this.methods.splitInputToArray(input.wfh_block.wfh_input.value);
-            this.queueService.addMailJob(await this.getWFHMailObject(userId, date, tasks));
             try {
                 await this.dailyEntryRepo.saveWfhEntry(userId, date, tasks);
+                this.queueService.addMailJob(await this.getWFHMailObject(userId, date, tasks));
             } catch (e) {
-                if (e instanceof WfhEntryExistsError) {
-                    this.slackFactory.sendMessage(userId, 'You already added WFH for today! :+1:', false); // TODO:Magic
+                console.log('e', e);
+                if (e instanceof WfhExistsError) {
+                    this.slackFactory.sendErrorMessage(userId, 'You already added WFH for today! :+1:'); // TODO:Magic
                 } else if (e instanceof DsrMissingError) {
-                    this.slackFactory.sendMessage(userId, 'WFH Entry not saved :warning:\nYou need to punch in yesterday\'s DSR first! :+1:', false); // TODO:Magic
+                    this.slackFactory.sendErrorMessage(userId, 'WFH Entry not saved :warning:\nYou need to punch in yesterday\'s DSR first! :+1:'); // TODO:Magic
                 } else {
-                    this.slackFactory.sendMessage(userId, 'WFH Entry not saved :warning:\n Server Issue! Please Report to HR!', false); // TODO:Magic
+                    this.slackFactory.sendErrorMessage(userId, 'WFH Entry not saved :warning:\n Server Issue! Please Report to HR!'); // TODO:Magic
                 }
                 console.error(e);
             }
@@ -128,8 +129,19 @@ export default class Route {
             const today = this.methods.splitInputToArray(input.dsr_1_block.dsr_1_input.value);
             const challenges = this.methods.splitInputToArray(input.dsr_2_block.dsr_2_input.value);
             const tomorrow = this.methods.splitInputToArray(input.dsr_3_block.dsr_3_input.value);
-            this.queueService.addMailJob(await this.getDSRMailObject(userId, date, today, challenges, tomorrow));
-            await this.dailyEntryRepo.saveDsrEntry(userId, date, today, challenges, tomorrow);
+            try {
+                await this.dailyEntryRepo.saveDsrEntry(userId, date, today, challenges, tomorrow);
+                this.queueService.addMailJob(await this.getDSRMailObject(userId, date, today, challenges, tomorrow));
+            } catch (e) {
+                if (e instanceof DsrExistsError) {
+                    this.slackFactory.sendErrorMessage(userId, 'You already added DSR for today! :+1:'); // TODO:Magic
+                } else if (e instanceof WfhMissingError) {
+                    this.slackFactory.sendErrorMessage(userId, 'DSR Entry not saved :warning:\nYou havent added a WFH entry for today'); // TODO:Magic
+                } else {
+                    this.slackFactory.sendErrorMessage(userId, 'DSR Entry not saved :warning:\n Server Issue! Please Report to HR!'); // TODO:Magic
+                }
+                console.error(e);
+            }
             this.updateHome(userId);
         });
         this.app.view('add_task_modal', async ({ ack, body, context }) => {

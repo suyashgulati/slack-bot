@@ -33,7 +33,7 @@ export default class MailService {
 
         if (!this.isValidMailOptions(mailOptions)) {
             console.error('Error in sendMail in MailService', `${JSON.stringify(mailOptions)} is not valid`);
-            throw new MailOptionsInvalidError(`Mail Options are invalid`);
+            throw new MailOptionsInvalidError(`Mail Options are invalid`, mailOptions);
         };
 
         const accessToken = await this.oauth2Client.getAccessToken();

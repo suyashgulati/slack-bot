@@ -33,10 +33,10 @@ export default class CronJob {
         forEach(allUserSettings, async userSett => {
             let userId = userSett.user.id;
             if (userSett.wfhTime === nowTime) {
-                this.slackFactory.sendMessage(userId, 'WFH Reminder', false, wfhMsg(userId))
+                this.slackFactory.sendMessage(userId, 'WFH Reminder', wfhMsg(userId))
             }
             if (userSett.dsrTime === nowTime) {
-                this.slackFactory.sendMessage(userId, 'DSR Reminder', false, dsrMsg(userId))
+                this.slackFactory.sendMessage(userId, 'DSR Reminder', dsrMsg(userId))
             }
         });
     }

@@ -4,19 +4,19 @@ import User from "../entity/user";
 import UserTodo from "../entity/user-todo";
 import DailyEntry from "../entity/daily-entry";
 import { map } from "lodash";
-import { WfhEntryExistsError, DsrMissingError } from "../../shared/errors/daily-entry-errors";
+import { DsrExistsError, WfhExistsError, DsrMissingError, WfhMissingError } from "../../shared/errors/daily-entry-errors";
 @Service()
 @EntityRepository(DailyEntry)
 export class DailyEntryRepository extends Repository<DailyEntry> {
 
     async saveWfhEntry(userId: string, date: string, tasks: string[]) {
         const lastDayEntry = await this.getLastDailyEntry(userId, date);
-        if (!lastDayEntry.today) {
+        if (lastDayEntry && !lastDayEntry.today) {
             throw new DsrMissingError('DSR missing for last day');
         }
         const todayEntry = await this.getTodayEntry(userId, date);
         if (todayEntry) {
-            throw new WfhEntryExistsError('WFH entry exists for today');
+            throw new WfhExistsError('WFH entry exists for today');
         }
         const user = new User(userId);
         const entry = new DailyEntry();
@@ -31,6 +31,13 @@ export class DailyEntryRepository extends Repository<DailyEntry> {
     }
 
     async saveDsrEntry(userId: string, date: string, today: string[], challenges: string[], tomorrow: string[]) {
+        const todayEntry = await this.getTodayEntry(userId, date);
+        if (!todayEntry) {
+            throw new WfhMissingError('WFH entry missing for today');
+        }
+        if (todayEntry && todayEntry.today) {
+            throw new DsrExistsError('DSR entry exists for today');
+        }
         let entry = await this.findOne({ where: { user: { id: userId }, date: new Date(date) } })
         entry.today = today;
         entry.challenges = challenges;

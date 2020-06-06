@@ -1,3 +1,5 @@
+import IMailOptions from "../interfaces/mail-options";
+
 export class MailError extends Error {
     constructor(message) {
         super(message);
@@ -6,7 +8,7 @@ export class MailError extends Error {
 }
 
 export class MailOptionsInvalidError extends MailError {
-    constructor(message) {
-        super(message);
+    constructor(message, opts: IMailOptions) {
+        super(`${message} ${JSON.stringify(opts)}`);
     }
 }
