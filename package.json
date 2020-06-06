@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build-ts": "tsc",
-    "postinstall": "npm run build-ts",
-    "start": "npm run serve",
-    "serve": "node build/app.js",
+    "start": "node build/app.js",
     "watch-node": "nodemon build/app.js",
     "watch-ts": "tsc -w"
   },
